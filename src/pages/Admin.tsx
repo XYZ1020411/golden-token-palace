@@ -7,7 +7,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Bell, Database } from "lucide-react";
+import { Settings, Users, Bell, Database, ArrowLeft } from "lucide-react";
 
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
@@ -20,12 +20,26 @@ const Admin = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  const handleReturn = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <MainLayout>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">管理員控制台</h1>
-          <p className="text-muted-foreground">管理系統用戶、公告與設置</p>
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">管理員控制台</h1>
+            <p className="text-muted-foreground">管理系統用戶、公告與設置</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1" 
+            onClick={handleReturn}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回儀表板
+          </Button>
         </div>
 
         <Tabs defaultValue="users" className="w-full">

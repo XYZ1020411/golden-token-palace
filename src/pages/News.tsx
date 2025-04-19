@@ -5,7 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useInfoServices } from "@/context/InfoServicesContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Clock, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Clock, ExternalLink, ArrowLeft } from "lucide-react";
 
 const News = () => {
   const { isAuthenticated } = useAuth();
@@ -18,12 +19,26 @@ const News = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const handleReturn = () => {
+    navigate("/dashboard");
+  };
+
   return (
     <MainLayout>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">新聞資訊</h1>
-          <p className="text-muted-foreground">最新新聞與資訊</p>
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">新聞資訊</h1>
+            <p className="text-muted-foreground">最新新聞與資訊</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1" 
+            onClick={handleReturn}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回儀表板
+          </Button>
         </div>
 
         <div className="space-y-6">
