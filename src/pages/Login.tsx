@@ -93,13 +93,6 @@ const Login = () => {
                   required
                 />
               </div>
-              
-              <div className="bg-secondary/50 p-3 rounded-md">
-                <p className="text-xs text-muted-foreground">測試帳號:</p>
-                <p className="text-xs">VIP帳號: vip8888 / 密碼: vip8888</p>
-                <p className="text-xs">普通帳號: 001 / 密碼: 001</p>
-                <p className="text-xs">管理員: 002 / 密碼: 002</p>
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button
