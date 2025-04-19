@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell } from "lucide-react";
+import { ProductRedemption } from "@/components/product/ProductRedemption";
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -216,6 +216,14 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Product Redemption Section */}
+        {user && user.role !== "admin" && (
+          <>
+            <h2 className="text-2xl font-semibold mt-6">商品兌換</h2>
+            <ProductRedemption />
+          </>
+        )}
 
         {/* Quick action buttons */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

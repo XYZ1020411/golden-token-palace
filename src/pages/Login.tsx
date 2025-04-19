@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -12,7 +11,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,7 +27,13 @@ const Login = () => {
           title: "登入成功",
           description: "歡迎回來！",
         });
-        navigate("/dashboard");
+        
+        // Redirect based on user role
+        if (user?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         toast({
           title: "登入失敗",
