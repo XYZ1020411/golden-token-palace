@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell } from "lucide-react";
 import { ProductRedemption } from "@/components/product/ProductRedemption";
+import { AnnouncementBoard } from "@/components/announcement/AnnouncementBoard";
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -152,6 +153,11 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           )}
+        </div>
+
+        {/* Announcement Board - New Section */}
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          <AnnouncementBoard />
         </div>
 
         {/* Information cards */}
