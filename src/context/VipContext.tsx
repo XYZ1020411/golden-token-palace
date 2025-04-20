@@ -36,6 +36,8 @@ interface VipContextType {
   claimDailyReward: () => Promise<boolean>;
   redeemItem: (itemId: string) => Promise<string | null>;
   playVipGame: () => Promise<number>;
+  checkAndUpgradeVipLevel: (points: number) => number;
+  updateVipLevel: (level: VipLevel) => Promise<boolean>;
 }
 
 const vipLevelData: VipLevel[] = [
@@ -149,6 +151,38 @@ export const VipProvider = ({ children }: { children: ReactNode }) => {
     return level;
   };
 
+  // Check and upgrade VIP level if points are sufficient
+  const checkAndUpgradeVipLevel = (points: number): number => {
+    if (!user || user.role !== "vip") {
+      return 0;
+    }
+    
+    const newLevel = determineVipLevel(points);
+    if (newLevel > vipLevel) {
+      setVipLevel(newLevel);
+      // Notify user about the level upgrade
+      console.log(`Congratulations! You've been upgraded to VIP level ${newLevel}`);
+    }
+    
+    return newLevel;
+  };
+
+  // Admin can update VIP level settings
+  const updateVipLevel = async (updatedLevel: VipLevel): Promise<boolean> => {
+    if (!user || user.role !== "admin") {
+      return false;
+    }
+    
+    // Update the VIP level
+    const updatedLevels = vipLevels.map(level => 
+      level.level === updatedLevel.level ? updatedLevel : level
+    );
+    
+    setVipLevels(updatedLevels);
+    
+    return true;
+  };
+
   // Claim daily reward
   const claimDailyReward = async (): Promise<boolean> => {
     if (!user || user.role !== "vip" || dailyRewardClaimed) {
@@ -250,7 +284,9 @@ export const VipProvider = ({ children }: { children: ReactNode }) => {
       redeemableItems,
       claimDailyReward,
       redeemItem,
-      playVipGame
+      playVipGame,
+      checkAndUpgradeVipLevel,
+      updateVipLevel
     }}>
       {children}
     </VipContext.Provider>

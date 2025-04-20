@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth, User, UserRole } from "./AuthContext";
+import { toast } from "@/components/ui/use-toast";
 
 export interface SystemAnnouncement {
   id: string;
@@ -11,9 +12,21 @@ export interface SystemAnnouncement {
   showToRoles: UserRole[];
 }
 
+export interface CustomerSupportMessage {
+  id: string;
+  userId: string;
+  username: string;
+  message: string;
+  date: string;
+  resolved: boolean;
+  adminResponse?: string;
+}
+
 interface AdminContextType {
   users: User[];
   announcements: SystemAnnouncement[];
+  supportMessages: CustomerSupportMessage[];
+  currentTemperature: string;
   addUser: (username: string, password: string, role: UserRole) => Promise<boolean>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<boolean>;
@@ -22,6 +35,9 @@ interface AdminContextType {
   deleteAnnouncement: (id: string) => boolean;
   backupData: () => string;
   restoreData: (jsonData: string) => boolean;
+  respondToSupportMessage: (messageId: string, response: string) => boolean;
+  markSupportMessageResolved: (messageId: string, resolved: boolean) => boolean;
+  updateTemperature: (temp: string) => void;
 }
 
 // Mock storage for users and announcements
@@ -64,12 +80,52 @@ let mockAnnouncements: SystemAnnouncement[] = [
   }
 ];
 
+let mockSupportMessages: CustomerSupportMessage[] = [
+  {
+    id: "1",
+    userId: "2",
+    username: "001",
+    message: "我無法領取我的每日獎勵，請幫忙解決。",
+    date: "2025-04-19T10:30:00Z",
+    resolved: false
+  },
+  {
+    id: "2",
+    userId: "1",
+    username: "vip8888",
+    message: "我想了解最新的VIP活動詳情。",
+    date: "2025-04-18T14:45:00Z",
+    resolved: true,
+    adminResponse: "您好，我們的最新VIP活動將在下週一開始，包括高額的獎勵和專屬優惠，請留意站內公告。"
+  }
+];
+
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>(mockAnnouncements);
+  const [supportMessages, setSupportMessages] = useState<CustomerSupportMessage[]>(mockSupportMessages);
+  const [currentTemperature, setCurrentTemperature] = useState<string>("28°C");
+
+  // Temperature update function
+  const updateTemperature = (temp: string) => {
+    setCurrentTemperature(temp);
+  };
+
+  // Set up temperature update interval (simulated)
+  React.useEffect(() => {
+    const updateRandomTemperature = () => {
+      const randomTemp = Math.floor(Math.random() * 10) + 20; // Random temp between 20-30°C
+      updateTemperature(`${randomTemp}°C`);
+    };
+
+    // Update temperature every second
+    const intervalId = setInterval(updateRandomTemperature, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Add a new user
   const addUser = async (username: string, password: string, role: UserRole): Promise<boolean> => {
@@ -80,6 +136,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     
     // Check if username already exists
     if (users.some(u => u.username === username)) {
+      toast({
+        title: "錯誤",
+        description: "用戶名已存在",
+        variant: "destructive"
+      });
       return false;
     }
     
@@ -98,6 +159,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     // Update state
     setUsers([...users, newUser]);
     
+    toast({
+      title: "成功",
+      description: "新用戶已創建",
+    });
+    
     return true;
   };
 
@@ -115,6 +181,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     // Update state
     setUsers(mockUsers);
     
+    toast({
+      title: "成功",
+      description: "用戶資料已更新",
+    });
+    
     return true;
   };
 
@@ -126,6 +197,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     
     // Cannot delete yourself
     if (userId === user.id) {
+      toast({
+        title: "錯誤",
+        description: "無法刪除自己的帳號",
+        variant: "destructive"
+      });
       return false;
     }
     
@@ -139,6 +215,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     
     // Update state
     setUsers(mockUsers);
+    
+    toast({
+      title: "成功",
+      description: "用戶已刪除",
+    });
     
     return true;
   };
@@ -160,6 +241,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     
     // Update state
     setAnnouncements([...announcements, newAnnouncement]);
+    
+    toast({
+      title: "成功",
+      description: "公告已發布",
+    });
   };
 
   // Update an announcement
@@ -176,6 +262,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     // Update state
     setAnnouncements(mockAnnouncements);
     
+    toast({
+      title: "成功",
+      description: "公告已更新",
+    });
+    
     return true;
   };
 
@@ -191,6 +282,55 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     // Update state
     setAnnouncements(mockAnnouncements);
     
+    toast({
+      title: "成功",
+      description: "公告已刪除",
+    });
+    
+    return true;
+  };
+
+  // Respond to customer support message
+  const respondToSupportMessage = (messageId: string, response: string): boolean => {
+    if (!user || user.role !== "admin") {
+      return false;
+    }
+    
+    // Find and update the message
+    mockSupportMessages = mockSupportMessages.map(m => 
+      m.id === messageId 
+        ? { ...m, adminResponse: response, resolved: true } 
+        : m
+    );
+    
+    setSupportMessages(mockSupportMessages);
+    
+    toast({
+      title: "成功",
+      description: "已回覆客戶訊息",
+    });
+    
+    return true;
+  };
+
+  // Mark support message as resolved/unresolved
+  const markSupportMessageResolved = (messageId: string, resolved: boolean): boolean => {
+    if (!user || user.role !== "admin") {
+      return false;
+    }
+    
+    // Find and update the message
+    mockSupportMessages = mockSupportMessages.map(m => 
+      m.id === messageId ? { ...m, resolved } : m
+    );
+    
+    setSupportMessages(mockSupportMessages);
+    
+    toast({
+      title: "成功",
+      description: resolved ? "訊息已標記為已解決" : "訊息已標記為未解決",
+    });
+    
     return true;
   };
 
@@ -203,8 +343,14 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     const backupData = {
       users: mockUsers,
       passwords: mockPasswords,
-      announcements: mockAnnouncements
+      announcements: mockAnnouncements,
+      supportMessages: mockSupportMessages
     };
+    
+    toast({
+      title: "成功",
+      description: "系統數據已備份",
+    });
     
     return JSON.stringify(backupData);
   };
@@ -220,6 +366,11 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       
       // Validate data structure
       if (!data.users || !data.passwords || !data.announcements) {
+        toast({
+          title: "錯誤",
+          description: "備份數據格式無效",
+          variant: "destructive"
+        });
         return false;
       }
       
@@ -227,14 +378,28 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       mockUsers = data.users;
       mockPasswords = data.passwords;
       mockAnnouncements = data.announcements;
+      if (data.supportMessages) {
+        mockSupportMessages = data.supportMessages;
+      }
       
       // Update state
       setUsers(mockUsers);
       setAnnouncements(mockAnnouncements);
+      setSupportMessages(mockSupportMessages);
+      
+      toast({
+        title: "成功",
+        description: "系統數據已恢復",
+      });
       
       return true;
     } catch (error) {
       console.error("Failed to restore data:", error);
+      toast({
+        title: "錯誤",
+        description: "還原數據失敗，請檢查文件格式",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -243,6 +408,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     <AdminContext.Provider value={{
       users,
       announcements,
+      supportMessages,
+      currentTemperature,
       addUser,
       updateUser,
       deleteUser,
@@ -250,7 +417,10 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       updateAnnouncement,
       deleteAnnouncement,
       backupData,
-      restoreData
+      restoreData,
+      respondToSupportMessage,
+      markSupportMessageResolved,
+      updateTemperature
     }}>
       {children}
     </AdminContext.Provider>

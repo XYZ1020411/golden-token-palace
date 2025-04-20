@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext";
 import {
   CreditCard,
   Layout,
@@ -13,7 +14,10 @@ import {
   Users,
   CalendarCheck,
   Database,
-  MessageCircle
+  MessageCircle,
+  Tag,
+  ScanBarcode,
+  Thermometer
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -21,14 +25,15 @@ interface SidebarItemProps {
   icon: React.ReactNode;
   title: string;
   active?: boolean;
+  badge?: string | number;
 }
 
-const SidebarItem = ({ href, icon, title, active }: SidebarItemProps) => {
+const SidebarItem = ({ href, icon, title, active, badge }: SidebarItemProps) => {
   return (
     <Link
       to={href}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all relative",
         active
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -36,6 +41,11 @@ const SidebarItem = ({ href, icon, title, active }: SidebarItemProps) => {
     >
       {icon}
       <span>{title}</span>
+      {badge && (
+        <span className="absolute right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 };
@@ -43,8 +53,12 @@ const SidebarItem = ({ href, icon, title, active }: SidebarItemProps) => {
 const Sidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { currentTemperature, supportMessages } = useAdmin();
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // Count unresolved support messages
+  const unresolvedCount = supportMessages?.filter(m => !m.resolved).length || 0;
 
   // Define common menu items
   const menuItems = [
@@ -106,11 +120,35 @@ const Sidebar = () => {
       icon: <Database className="h-5 w-5" />,
       title: "點數管理",
     },
+    {
+      href: "/admin/products",
+      icon: <Tag className="h-5 w-5" />,
+      title: "商品設定",
+    },
+    {
+      href: "/scan",
+      icon: <ScanBarcode className="h-5 w-5" />,
+      title: "條碼掃描",
+    },
+    {
+      href: "/admin/support",
+      icon: <MessageCircle className="h-5 w-5" />,
+      title: "AI客服",
+      badge: unresolvedCount || undefined,
+    },
   ];
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 border-r border-r-border bg-sidebar-background flex-col">
       <div className="flex flex-col gap-2 p-4">
+        <div className="flex items-center justify-between p-2">
+          <h1 className="font-bold text-lg">渣打好公司</h1>
+          <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-full">
+            <Thermometer className="h-3 w-3 text-blue-500" />
+            <span>{currentTemperature}</span>
+          </div>
+        </div>
+        
         <div className="py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold">主菜單</h2>
           <div className="space-y-1">
@@ -128,7 +166,7 @@ const Sidebar = () => {
 
         {user?.role === "vip" && (
           <div className="py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold text-vip-gold">VIP服務</h2>
+            <h2 className="mb-2 px-4 text-lg font-semibold text-amber-500">VIP服務</h2>
             <div className="space-y-1">
               {vipMenuItems.map((item) => (
                 <SidebarItem
@@ -154,6 +192,7 @@ const Sidebar = () => {
                   icon={item.icon}
                   title={item.title}
                   active={isActive(item.href)}
+                  badge={item.badge}
                 />
               ))}
             </div>
