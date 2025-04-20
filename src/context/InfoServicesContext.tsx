@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { fetchWeatherFromCWB } from "../services/weatherService";
+import { fetchWeatherFromCWA } from "../services/weatherService";
 
 export interface WeatherData {
   city: string;
@@ -38,7 +38,6 @@ interface InfoServicesContextType {
   fetchNews: () => Promise<boolean>;
 }
 
-// Mock news data
 const mockNewsItems: NewsItem[] = [
   {
     id: "1",
@@ -77,7 +76,6 @@ const mockNewsItems: NewsItem[] = [
   }
 ];
 
-// Mock typhoon data
 const mockTyphoonWarnings: TyphoonInfo[] = [
   {
     id: "1",
@@ -98,25 +96,25 @@ export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
   const [typhoonWarnings, setTyphoonWarnings] = useState<TyphoonInfo[]>(mockTyphoonWarnings);
   const [currentWeatherAlerts, setCurrentWeatherAlerts] = useState<string[]>([]);
 
-  // 定期從中央氣象局獲取天氣資料
   useEffect(() => {
     const fetchWeatherData = async () => {
-      const data = await fetchWeatherFromCWB();
-      if (data.length > 0) {
-        setWeatherData(data);
+      try {
+        const data = await fetchWeatherFromCWA();
+        if (data.length > 0) {
+          setWeatherData(data);
+        }
+      } catch (error) {
+        console.error('獲取天氣資料失敗:', error);
       }
     };
 
-    // 初始載入
     fetchWeatherData();
 
-    // 每30分鐘更新一次
     const interval = setInterval(fetchWeatherData, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // 初始化天氣警報
   useEffect(() => {
     const alerts = weatherData
       .filter(data => data.alert)

@@ -1,8 +1,8 @@
 
-// 中央氣象局 API 服務
-// 參考文件: https://opendata.cwb.gov.tw/dist/opendata-swagger.html
+// 中央氣象署 API 服務
+// 參考文件: https://opendata.cwa.gov.tw/dist/opendata-swagger.html
 
-interface CWBWeatherResponse {
+interface WeatherForecastResponse {
   success: string;
   records: {
     location: Array<{
@@ -22,10 +22,50 @@ interface CWBWeatherResponse {
   };
 }
 
-const CWB_API_ENDPOINT = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001";
-const CWB_API_KEY = "CWB-1234567B-1234-4567-ABCD-123456789012"; // 這是假的 API key，請替換成您的實際 API 金鑰
+interface WeatherWarningResponse {
+  success: string;
+  records: {
+    hazard: Array<{
+      hazardId: string;
+      hazardName: string;
+      location: string[];
+      startTime: string;
+      endTime: string;
+    }>;
+  };
+}
 
-export const fetchWeatherFromCWB = async () => {
+interface EarthquakeResponse {
+  success: string;
+  records: {
+    earthquake: Array<{
+      earthquakeNo: string;
+      location: string;
+      originTime: string;
+      magnitudeValue: string;
+      depth: string;
+    }>;
+  };
+}
+
+interface TyphoonResponse {
+  success: string;
+  records: {
+    typhoon: Array<{
+      typhoonNo: string;
+      typhoonName: string;
+      position: string;
+      movingSpeed: string;
+      pressure: string;
+      radius15: string;
+    }>;
+  };
+}
+
+const CWA_API_ENDPOINT = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
+const CWA_API_KEY = "CWA-6FC4659D-D65C-4612-928C-CC2CCFFBA42A";
+
+const fetchFromCWA = async <T>(endpoint: string): Promise<T> => {
   // 檢查網路連接
   if (!navigator.onLine) {
     throw new Error('目前無網路連接');
@@ -36,7 +76,7 @@ export const fetchWeatherFromCWB = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 秒超時
 
     const response = await fetch(
-      `${CWB_API_ENDPOINT}?Authorization=${CWB_API_KEY}&format=JSON`,
+      `${CWA_API_ENDPOINT}/${endpoint}?Authorization=${CWA_API_KEY}`,
       {
         signal: controller.signal,
         headers: {
@@ -51,30 +91,10 @@ export const fetchWeatherFromCWB = async () => {
       throw new Error(`API 請求失敗: ${response.status}`);
     }
 
-    const data: CWBWeatherResponse = await response.json();
-    
-    return data.records.location.map(location => {
-      // 解析天氣要素
-      const weatherElements = location.weatherElement;
-      const wx = weatherElements.find(el => el.elementName === 'Wx')?.time[0]?.parameter.parameterName || '';
-      const minT = weatherElements.find(el => el.elementName === 'MinT')?.time[0]?.parameter.parameterName || '';
-      const maxT = weatherElements.find(el => el.elementName === 'MaxT')?.time[0]?.parameter.parameterName || '';
-      const pop = weatherElements.find(el => el.elementName === 'PoP')?.time[0]?.parameter.parameterName || '';
-
-      // 計算平均溫度
-      const avgTemp = Math.round((Number(minT) + Number(maxT)) / 2);
-
-      return {
-        city: location.locationName,
-        temperature: avgTemp,
-        condition: wx,
-        humidity: Number(pop),
-        windSpeed: 0, // 由於 F-C0032-001 API 不提供風速資料，預設為 0
-        alert: Number(pop) > 70 ? "大雨特報" : undefined
-      };
-    });
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error('獲取天氣資料失敗:', error);
+    console.error('API 請求失敗:', error);
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         throw new Error('資料同步超時，請稍後再試');
@@ -84,3 +104,40 @@ export const fetchWeatherFromCWB = async () => {
   }
 };
 
+export const fetchWeatherFromCWA = async () => {
+  const data = await fetchFromCWA<WeatherForecastResponse>('F-C0032-001');
+  
+  return data.records.location.map(location => {
+    const weatherElements = location.weatherElement;
+    const wx = weatherElements.find(el => el.elementName === 'Wx')?.time[0]?.parameter.parameterName || '';
+    const minT = weatherElements.find(el => el.elementName === 'MinT')?.time[0]?.parameter.parameterName || '';
+    const maxT = weatherElements.find(el => el.elementName === 'MaxT')?.time[0]?.parameter.parameterName || '';
+    const pop = weatherElements.find(el => el.elementName === 'PoP')?.time[0]?.parameter.parameterName || '';
+
+    const avgTemp = Math.round((Number(minT) + Number(maxT)) / 2);
+
+    return {
+      city: location.locationName,
+      temperature: avgTemp,
+      condition: wx,
+      humidity: Number(pop),
+      windSpeed: 0,
+      alert: Number(pop) > 70 ? "大雨特報" : undefined
+    };
+  });
+};
+
+export const fetchWeatherWarnings = async () => {
+  const data = await fetchFromCWA<WeatherWarningResponse>('W-C0033-001');
+  return data.records.hazard;
+};
+
+export const fetchEarthquakeInfo = async () => {
+  const data = await fetchFromCWA<EarthquakeResponse>('E-A0015-002');
+  return data.records.earthquake;
+};
+
+export const fetchTyphoonInfo = async () => {
+  const data = await fetchFromCWA<TyphoonResponse>('W-C0034-005');
+  return data.records.typhoon;
+};
