@@ -23,16 +23,32 @@ interface CWBWeatherResponse {
 }
 
 const CWB_API_ENDPOINT = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001";
-const CWB_API_KEY = "YOUR_API_KEY"; // 這裡需要替換成實際的 API 金鑰
+const CWB_API_KEY = "CWB-1234567B-1234-4567-ABCD-123456789012"; // 這是假的 API key，請替換成您的實際 API 金鑰
 
 export const fetchWeatherFromCWB = async () => {
+  // 檢查網路連接
+  if (!navigator.onLine) {
+    throw new Error('目前無網路連接');
+  }
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 秒超時
+
     const response = await fetch(
-      `${CWB_API_ENDPOINT}?Authorization=${CWB_API_KEY}&format=JSON`
+      `${CWB_API_ENDPOINT}?Authorization=${CWB_API_KEY}&format=JSON`,
+      {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      }
     );
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error('無法從中央氣象局獲取資料');
+      throw new Error(`API 請求失敗: ${response.status}`);
     }
 
     const data: CWBWeatherResponse = await response.json();
@@ -59,6 +75,12 @@ export const fetchWeatherFromCWB = async () => {
     });
   } catch (error) {
     console.error('獲取天氣資料失敗:', error);
-    return [];
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        throw new Error('資料同步超時，請稍後再試');
+      }
+    }
+    throw error;
   }
 };
+
