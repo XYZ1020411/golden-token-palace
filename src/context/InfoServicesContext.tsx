@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { fetchWeatherFromCWB } from "../services/weatherService";
 
 export interface WeatherData {
   city: string;
@@ -37,117 +37,6 @@ interface InfoServicesContextType {
   fetchWeather: (city: string) => Promise<WeatherData | null>;
   fetchNews: () => Promise<boolean>;
 }
-
-// Mock weather data for Taiwan cities
-const mockWeatherData: WeatherData[] = [
-  {
-    city: "台北市",
-    temperature: 26,
-    condition: "晴時多雲",
-    humidity: 70,
-    windSpeed: 5
-  },
-  {
-    city: "新北市",
-    temperature: 25,
-    condition: "晴時多雲",
-    humidity: 75,
-    windSpeed: 6
-  },
-  {
-    city: "桃園市",
-    temperature: 27,
-    condition: "晴時多雲",
-    humidity: 68,
-    windSpeed: 4
-  },
-  {
-    city: "台中市",
-    temperature: 28,
-    condition: "晴天",
-    humidity: 65,
-    windSpeed: 3
-  },
-  {
-    city: "台南市",
-    temperature: 30,
-    condition: "晴天",
-    humidity: 60,
-    windSpeed: 4
-  },
-  {
-    city: "高雄市",
-    temperature: 31,
-    condition: "晴天",
-    humidity: 65,
-    windSpeed: 5
-  },
-  {
-    city: "基隆市",
-    temperature: 24,
-    condition: "多雲",
-    humidity: 80,
-    windSpeed: 7,
-    alert: "大雨特報"
-  },
-  {
-    city: "新竹市",
-    temperature: 26,
-    condition: "晴時多雲",
-    humidity: 70,
-    windSpeed: 8
-  },
-  {
-    city: "嘉義市",
-    temperature: 29,
-    condition: "晴天",
-    humidity: 62,
-    windSpeed: 4
-  },
-  {
-    city: "宜蘭縣",
-    temperature: 25,
-    condition: "多雲",
-    humidity: 78,
-    windSpeed: 6
-  },
-  {
-    city: "花蓮縣",
-    temperature: 27,
-    condition: "晴時多雲",
-    humidity: 75,
-    windSpeed: 5
-  },
-  {
-    city: "台東縣",
-    temperature: 28,
-    condition: "晴天",
-    humidity: 70,
-    windSpeed: 6
-  },
-  {
-    city: "澎湖縣",
-    temperature: 26,
-    condition: "晴時多雲",
-    humidity: 75,
-    windSpeed: 10,
-    alert: "強風特報"
-  },
-  {
-    city: "金門縣",
-    temperature: 25,
-    condition: "多雲",
-    humidity: 78,
-    windSpeed: 8
-  },
-  {
-    city: "連江縣",
-    temperature: 24,
-    condition: "多雲",
-    humidity: 80,
-    windSpeed: 9
-  }
-];
 
 // Mock news data
 const mockNewsItems: NewsItem[] = [
@@ -204,12 +93,30 @@ const mockTyphoonWarnings: TyphoonInfo[] = [
 const InfoServicesContext = createContext<InfoServicesContextType | undefined>(undefined);
 
 export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
-  const [weatherData, setWeatherData] = useState<WeatherData[]>(mockWeatherData);
+  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
   const [newsItems, setNewsItems] = useState<NewsItem[]>(mockNewsItems);
   const [typhoonWarnings, setTyphoonWarnings] = useState<TyphoonInfo[]>(mockTyphoonWarnings);
   const [currentWeatherAlerts, setCurrentWeatherAlerts] = useState<string[]>([]);
 
-  // Initialize weather alerts on load
+  // 定期從中央氣象局獲取天氣資料
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      const data = await fetchWeatherFromCWB();
+      if (data.length > 0) {
+        setWeatherData(data);
+      }
+    };
+
+    // 初始載入
+    fetchWeatherData();
+
+    // 每30分鐘更新一次
+    const interval = setInterval(fetchWeatherData, 30 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 初始化天氣警報
   useEffect(() => {
     const alerts = weatherData
       .filter(data => data.alert)
@@ -218,17 +125,12 @@ export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
     setCurrentWeatherAlerts(alerts);
   }, [weatherData]);
 
-  // Fetch weather for a specific city
   const fetchWeather = async (city: string): Promise<WeatherData | null> => {
-    // In a real app, this would be an API call
-    const cityData = mockWeatherData.find(data => data.city === city);
+    const cityData = weatherData.find(data => data.city === city);
     return cityData || null;
   };
 
-  // Fetch latest news
   const fetchNews = async (): Promise<boolean> => {
-    // In a real app, this would be an API call
-    // For demo, we'll just assume the fetch is successful
     return true;
   };
 
