@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/context/AdminContext";
+import { Button } from "@/components/ui/button";
 import {
   CreditCard,
   Layout,
@@ -17,7 +18,8 @@ import {
   MessageCircle,
   Tag,
   ScanBarcode,
-  Thermometer
+  Thermometer,
+  Inbox
 } from "lucide-react";
 
 interface SidebarItemProps {
@@ -71,6 +73,11 @@ const Sidebar = () => {
       href: "/wallet",
       icon: <CreditCard className="h-5 w-5" />,
       title: "錢包系統",
+    },
+    {
+      href: "/inbox",
+      icon: <Inbox className="h-5 w-5" />,
+      title: "收件夾",
     },
     {
       href: "/weather",
@@ -208,12 +215,17 @@ const Sidebar = () => {
             <p className="mb-3 text-sm text-sidebar-foreground">
               有任何問題嗎？我們的AI客服隨時為您服務。
             </p>
-            <Link
-              to="/support"
+            <Button
+              onClick={() => {
+                const aiCustomerService = document.querySelector('[aria-label="開啟AI客服"]');
+                if (aiCustomerService instanceof HTMLElement) {
+                  aiCustomerService.click();
+                }
+              }}
               className="block w-full rounded bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
             >
               聯繫客服
-            </Link>
+            </Button>
           </div>
         </div>
       </div>

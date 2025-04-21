@@ -150,7 +150,6 @@ export const AiCustomerService = () => {
                 placeholder="輸入您的問題..."
                 className="flex-1"
                 aria-label="問題輸入"
-                autoFocus
               />
               <Button size="icon" onClick={handleSendMessage} aria-label="發送訊息">
                 <Send className="h-4 w-4" />
