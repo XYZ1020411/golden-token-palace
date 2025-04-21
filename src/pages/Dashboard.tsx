@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
 import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell } from "lucide-react";
-import { ProductRedemption } from "@/components/product/ProductRedemption";
+import { CouponRedemption } from "@/components/product/CouponRedemption";
 import { AnnouncementBoard } from "@/components/announcement/AnnouncementBoard";
+import { AiCustomerService } from "@/components/customer-service/AiCustomerService";
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -223,11 +224,11 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Product Redemption Section */}
+        {/* Product Coupon Redemption Section - UPDATED */}
         {user && user.role !== "admin" && (
           <>
-            <h2 className="text-2xl font-semibold mt-6">商品兌換</h2>
-            <ProductRedemption />
+            <h2 className="text-2xl font-semibold mt-6">商品券兌換</h2>
+            <CouponRedemption />
           </>
         )}
 
@@ -256,6 +257,9 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
+      
+      {/* AI Customer Service Floating Button */}
+      <AiCustomerService />
     </MainLayout>
   );
 };

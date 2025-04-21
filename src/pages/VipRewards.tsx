@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarCheck, Gift, Trophy, CreditCard } from "lucide-react";
+import { ScratchCard } from "@/components/vip/ScratchCard";
 
 const VipRewards = () => {
   const { user, isAuthenticated } = useAuth();
@@ -78,15 +78,10 @@ const VipRewards = () => {
   const handlePlayGame = async () => {
     setIsPlaying(true);
     setShowGameResult(false);
+    setGameResult(null);
     
     try {
-      // Simulate a delay to create suspense
-      setTimeout(async () => {
-        const result = await playVipGame();
-        setGameResult(result);
-        setIsPlaying(false);
-        setShowGameResult(true);
-      }, 2000);
+      // 沒有立即揭曉結果，讓用戶刮刮樂
     } catch (error) {
       setIsPlaying(false);
       toast({
@@ -97,7 +92,23 @@ const VipRewards = () => {
     }
   };
 
-  // Get current VIP level info
+  const handleRevealResult = async () => {
+    try {
+      // 獲取遊戲結果
+      const result = await playVipGame();
+      setGameResult(result);
+      setIsPlaying(false);
+      setShowGameResult(true);
+    } catch (error) {
+      setIsPlaying(false);
+      toast({
+        title: "遊戲失敗",
+        description: "發生錯誤，請稍後再試",
+        variant: "destructive",
+      });
+    }
+  };
+
   const currentVipLevel = vipLevels.find(level => level.level === vipLevel);
   const nextVipLevel = vipLevels.find(level => level.level === vipLevel + 1);
 
@@ -109,7 +120,6 @@ const VipRewards = () => {
           <p className="text-muted-foreground">專屬VIP會員的特殊功能與獎勵</p>
         </div>
 
-        {/* VIP status card */}
         <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200">
           <CardHeader>
             <CardTitle className="text-primary flex items-center">
@@ -141,7 +151,6 @@ const VipRewards = () => {
           </CardContent>
         </Card>
 
-        {/* Rewards sections */}
         <Tabs defaultValue="daily" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="daily">每日獎勵</TabsTrigger>
@@ -149,7 +158,6 @@ const VipRewards = () => {
             <TabsTrigger value="game">VIP遊戲</TabsTrigger>
           </TabsList>
           
-          {/* Daily reward tab */}
           <TabsContent value="daily" className="mt-4 space-y-4">
             <Card>
               <CardHeader>
@@ -213,7 +221,6 @@ const VipRewards = () => {
             </Card>
           </TabsContent>
           
-          {/* Redeem items tab */}
           <TabsContent value="redeem" className="mt-4">
             <Card>
               <CardHeader>
@@ -302,7 +309,6 @@ const VipRewards = () => {
             </Card>
           </TabsContent>
           
-          {/* VIP game tab */}
           <TabsContent value="game" className="mt-4">
             <Card>
               <CardHeader>
@@ -340,47 +346,19 @@ const VipRewards = () => {
                       </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="py-8 flex flex-col items-center justify-center">
-                      {isPlaying ? (
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-                          <p className="text-lg font-medium">刮獎中...</p>
-                        </div>
-                      ) : showGameResult ? (
-                        <div className="text-center">
-                          <div className="text-5xl font-bold text-primary mb-2">
-                            {formatNumber(gameResult || 0)}
-                          </div>
-                          <p className="text-xl">恭喜您獲得獎勵！</p>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            獎勵已添加到您的帳戶
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="bg-muted h-32 w-64 flex items-center justify-center rounded-md">
-                            <Gift className="h-16 w-16 text-muted-foreground" />
-                          </div>
-                          <p className="text-center text-sm text-muted-foreground">
-                            點擊下方按鈕開始刮獎
-                          </p>
-                        </div>
-                      )}
+                    <div className="py-4 flex flex-col items-center justify-center">
+                      <ScratchCard 
+                        isRevealed={showGameResult}
+                        onReveal={handleRevealResult}
+                        reward={gameResult}
+                        isLoading={isPlaying}
+                      />
                     </div>
                     
                     <DialogFooter>
-                      {showGameResult ? (
-                        <Button onClick={() => setGameDialogOpen(false)}>
-                          關閉
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={handlePlayGame}
-                          disabled={isPlaying}
-                        >
-                          {isPlaying ? "刮獎中..." : "開始刮獎"}
-                        </Button>
-                      )}
+                      <Button onClick={() => setGameDialogOpen(false)}>
+                        關閉
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
