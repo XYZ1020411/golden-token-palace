@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Ticket, Gift } from "lucide-react";
+import { Gift } from "lucide-react";
 import { useWallet } from "@/context/WalletContext";
 import { useProduct } from "@/context/ProductContext";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +14,7 @@ export const CouponRedemption = () => {
   const { products, purchaseProduct } = useProduct();
   const [redeeming, setRedeeming] = useState<string | null>(null);
 
+  // 商品卷兌換
   const handleRedeem = async (productId: string, productName: string, productPrice: number) => {
     if (balance < productPrice) {
       toast({
@@ -26,18 +27,19 @@ export const CouponRedemption = () => {
 
     setRedeeming(productId);
     try {
+      // 產生條碼自動收件夾儲存
       const barcode = await purchaseProduct(productId);
-      
+
       if (barcode) {
         await addTransaction({
           amount: -productPrice,
           type: "exchange",
-          description: `兌換商品券: ${productName}`
+          description: `兌換商品券: ${productName}`,
         });
 
         toast({
           title: "兌換成功",
-          description: `您已成功兌換 ${productName}，條碼已生成至您的收件箱`,
+          description: `您已成功兌換 ${productName}，條碼已自動儲存在收件夾`,
         });
       } else {
         throw new Error("兌換失敗");
@@ -61,7 +63,7 @@ export const CouponRedemption = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{product.name}</CardTitle>
-                <Ticket className="h-5 w-5 text-muted-foreground" />
+                <Gift className="h-5 w-5 text-muted-foreground" />
               </div>
               <CardDescription>{product.description}</CardDescription>
             </CardHeader>
@@ -77,7 +79,7 @@ export const CouponRedemption = () => {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>兌換後，您可在個人收件箱找到條碼</p>
+                    <p>兌換後，請至「收件夾」取得商品條碼，至現場掃描核銷。</p>
                   </TooltipContent>
                 </Tooltip>
               </div>

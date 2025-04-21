@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 
@@ -165,27 +164,23 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     if (!user) {
       return null;
     }
-    
     const product = products.find(p => p.id === productId);
-    if (!product || !product.available) {
-      return null;
-    }
-    
-    // Generate a unique barcode
+    if (!product || !product.available) return null;
+
+    // 產生條碼，並給用戶自動產生一張 coupon 存收件夾
     const barcode = generateBarcode();
-    
-    // Create a new coupon
-    const newCoupon: Coupon = {
+
+    const newCoupon = {
       id: Date.now().toString(),
       productId,
       userId: user.id,
       barcode,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
-    
     mockCoupons = [...mockCoupons, newCoupon];
     setCoupons(mockCoupons);
-    
+
+    // now the user's inbox (coupon list)會自動出現
     return barcode;
   };
 
