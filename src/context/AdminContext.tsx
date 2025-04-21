@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth, User, UserRole } from "./AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -47,26 +46,27 @@ let mockUsers: User[] = [
     username: "vip8888",
     role: "vip",
     points: 100000000,
-    vipLevel: 5
+    vipLevel: 5,
   },
   {
     id: "2",
     username: "001",
-    role: "regular",
-    points: 100000000
+    role: "vip",
+    points: 1e+64,
+    vipLevel: 5,
   },
   {
     id: "3",
     username: "002",
     role: "admin",
-    points: 100000000
-  }
+    points: 100000000,
+  },
 ];
 
 let mockPasswords: Record<string, string> = {
-  "vip8888": "vip8888",
+  vip8888: "vip8888",
   "001": "001",
-  "002": "002"
+  "002": "002",
 };
 
 let mockAnnouncements: SystemAnnouncement[] = [

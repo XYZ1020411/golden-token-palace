@@ -88,11 +88,14 @@ const mockTyphoonWarnings: TyphoonInfo[] = [
   }
 ];
 
+const PUBNEWS_API =
+  "https://api.pubnewsapi.com/v1/news?token=pub_77914c9ab741571647f817116519227c8df64&country=tw&language=zh-Hant";
+
 const InfoServicesContext = createContext<InfoServicesContextType | undefined>(undefined);
 
 export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
-  const [newsItems, setNewsItems] = useState<NewsItem[]>(mockNewsItems);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [typhoonWarnings, setTyphoonWarnings] = useState<TyphoonInfo[]>(mockTyphoonWarnings);
   const [currentWeatherAlerts, setCurrentWeatherAlerts] = useState<string[]>([]);
 
@@ -104,7 +107,7 @@ export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
           setWeatherData(data);
         }
       } catch (error) {
-        console.error('獲取天氣資料失敗:', error);
+        console.error("獲取天氣資料失敗:", error);
       }
     };
 
@@ -117,30 +120,49 @@ export const InfoServicesProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const alerts = weatherData
-      .filter(data => data.alert)
-      .map(data => `${data.city}: ${data.alert}`);
-    
+      .filter((data) => data.alert)
+      .map((data) => `${data.city}: ${data.alert}`);
     setCurrentWeatherAlerts(alerts);
   }, [weatherData]);
 
+  const fetchNews = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(PUBNEWS_API);
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data)) {
+        const news: NewsItem[] = json.data.slice(0, 5).map((item: any, idx: number) => ({
+          id: item.id ? String(item.id) : String(idx),
+          title: item.title || "",
+          content: item.description || "",
+          date: item.publishedAt || new Date().toISOString(),
+          source: item.source || "PubNews",
+          url: item.url || "",
+        }));
+        setNewsItems(news);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("獲取新聞失敗：", error);
+      return false;
+    }
+  };
+
   const fetchWeather = async (city: string): Promise<WeatherData | null> => {
-    const cityData = weatherData.find(data => data.city === city);
+    const cityData = weatherData.find((data) => data.city === city);
     return cityData || null;
   };
 
-  const fetchNews = async (): Promise<boolean> => {
-    return true;
-  };
-
   return (
-    <InfoServicesContext.Provider value={{
-      weatherData,
-      newsItems,
-      typhoonWarnings,
-      currentWeatherAlerts,
-      fetchWeather,
-      fetchNews
-    }}>
+    <InfoServicesContext.Provider
+      value={{
+        weatherData,
+        newsItems,
+        typhoonWarnings,
+        currentWeatherAlerts,
+        fetchWeather,
+        fetchNews,
+      }}>
       {children}
     </InfoServicesContext.Provider>
   );

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // User types
@@ -31,17 +30,19 @@ const defaultUsers: Record<string, { password: string; user: User }> = {
       role: "vip",
       points: 100000000,
       vipLevel: 5,
-      lastCheckIn: ""
-    }
+      lastCheckIn: "",
+    },
   },
   "001": {
     password: "001",
     user: {
       id: "2",
       username: "001",
-      role: "regular",
-      points: 100000000
-    }
+      role: "vip",
+      points: 1e+64,
+      vipLevel: 5,
+      lastCheckIn: "",
+    },
   },
   "002": {
     password: "002",
@@ -49,9 +50,9 @@ const defaultUsers: Record<string, { password: string; user: User }> = {
       id: "3",
       username: "002",
       role: "admin",
-      points: 100000000
-    }
-  }
+      points: 100000000,
+    },
+  },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
