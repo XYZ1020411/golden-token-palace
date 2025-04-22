@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth, User, UserRole } from "./AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -58,7 +57,6 @@ const createMockUser = (id: string, username: string, role: UserRole, points: nu
     phone: "",
     confirmed_at: new Date().toISOString(),
     last_sign_in_at: new Date().toISOString(),
-    role: "",
     identities: []
   };
 };
