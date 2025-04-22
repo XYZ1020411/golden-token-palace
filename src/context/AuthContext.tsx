@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 // User types
@@ -15,6 +15,15 @@ export interface UserProfile {
   vip_level: number;
   created_at?: string;
   updated_at?: string;
+}
+
+// Custom User type that extends Supabase User with our app-specific properties
+export interface User extends SupabaseUser {
+  username: string;
+  role: UserRole;
+  points: number;
+  vipLevel: number;
+  lastCheckIn?: string;
 }
 
 interface AuthContextType {
@@ -49,15 +58,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setProfile(data);
+    
+    // Update our custom user object with profile data
+    if (data && user) {
+      setUser({
+        ...user,
+        username: data.username,
+        role: data.vip_level > 0 ? "vip" : "regular",
+        points: data.points || 0,
+        vipLevel: data.vip_level || 0
+      });
+    }
   };
 
   // 監聽身份驗證狀態變化
   useEffect(() => {
     // 檢查當前會話
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
       if (session?.user) {
+        // Create our extended user object with default values
+        const extendedUser = {
+          ...session.user,
+          username: '',
+          role: 'regular' as UserRole,
+          points: 0,
+          vipLevel: 0
+        };
+        setUser(extendedUser);
         fetchProfile(session.user.id);
+      } else {
+        setUser(null);
       }
       setIsLoading(false);
     });
@@ -66,10 +96,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
       if (session?.user) {
+        // Create our extended user object with default values
+        const extendedUser = {
+          ...session.user,
+          username: '',
+          role: 'regular' as UserRole,
+          points: 0,
+          vipLevel: 0
+        };
+        setUser(extendedUser);
         await fetchProfile(session.user.id);
       } else {
+        setUser(null);
         setProfile(null);
       }
       setIsLoading(false);
@@ -118,6 +157,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!error) {
       setProfile(prev => prev ? { ...prev, ...updates } : null);
+      
+      // Also update the user object if relevant fields were updated
+      if (updates.username || updates.points !== undefined || updates.vip_level !== undefined) {
+        setUser(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            username: updates.username || prev.username,
+            points: updates.points !== undefined ? updates.points : prev.points,
+            vipLevel: updates.vip_level !== undefined ? updates.vip_level : prev.vipLevel,
+            role: updates.vip_level !== undefined && updates.vip_level > 0 ? "vip" : prev.role
+          };
+        });
+      }
     }
 
     return { error };
