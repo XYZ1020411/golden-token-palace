@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Settings, Users, Bell, Database, ArrowLeft, UserPlus, FileText, Thermometer, Tag, ScanBarcode } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { getAiAssistantResponse } from "@/services/aiAssistant";
 
 const Admin = () => {
   const { user, isAuthenticated } = useAuth();
@@ -224,6 +224,24 @@ const Admin = () => {
 
   const handleGoToScan = () => {
     navigate("/scan");
+  };
+
+  const handleAiAssist = async (messageId: string, customerMessage: string) => {
+    const aiResponse = await getAiAssistantResponse(customerMessage);
+    if (aiResponse.status === 'success') {
+      setResponseText(aiResponse.content);
+      setSelectedMessage(messageId);
+      toast({
+        title: "AI 助手已生成回覆",
+        description: "請檢查並編輯回覆內容後發送。"
+      });
+    } else {
+      toast({
+        title: "錯誤",
+        description: aiResponse.content,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -480,7 +498,6 @@ const Admin = () => {
                           defaultValue={user.points}
                           onChange={(e) => {
                             const points = parseInt(e.target.value) || 0;
-                            // Save the value temporarily
                             e.currentTarget.dataset.points = points.toString();
                           }}
                         />
@@ -792,6 +809,13 @@ const Admin = () => {
                                 placeholder="輸入回覆內容..."
                               />
                               <div className="flex gap-2 justify-end">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleAiAssist(message.id, message.message)}
+                                >
+                                  使用 AI 助手
+                                </Button>
                                 <Button variant="outline" size="sm" onClick={() => setSelectedMessage(null)}>
                                   取消
                                 </Button>
