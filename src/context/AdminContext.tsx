@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { useAuth, User, UserRole } from "./AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -39,28 +40,34 @@ interface AdminContextType {
   updateTemperature: (temp: string) => void;
 }
 
+// Helper function to create a mock Supabase User with our custom properties
+const createMockUser = (id: string, username: string, role: UserRole, points: number, vipLevel?: number): User => {
+  return {
+    id,
+    username,
+    role,
+    points,
+    vipLevel: vipLevel || 0,
+    // Required Supabase User properties
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    email: `${username}@example.com`,
+    phone: "",
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    role: "",
+    identities: []
+  };
+};
+
 // Mock storage for users and announcements
 let mockUsers: User[] = [
-  {
-    id: "1",
-    username: "vip8888",
-    role: "vip",
-    points: 100000000,
-    vipLevel: 5,
-  },
-  {
-    id: "2",
-    username: "001",
-    role: "vip",
-    points: 1e+64,
-    vipLevel: 5,
-  },
-  {
-    id: "3",
-    username: "002",
-    role: "admin",
-    points: 100000000,
-  },
+  createMockUser("1", "vip8888", "vip", 100000000, 5),
+  createMockUser("2", "001", "vip", 1e+64, 5),
+  createMockUser("3", "002", "admin", 100000000, 0)
 ];
 
 let mockPasswords: Record<string, string> = {
@@ -144,13 +151,13 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
     
-    const newUser: User = {
-      id: Date.now().toString(),
+    const newUser = createMockUser(
+      Date.now().toString(),
       username,
       role,
-      points: 100000000,
-      vipLevel: role === "vip" ? 1 : undefined
-    };
+      100000000,
+      role === "vip" ? 1 : 0
+    );
     
     // Update mock storage
     mockUsers = [...mockUsers, newUser];
