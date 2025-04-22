@@ -7,45 +7,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const Register = () => {
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: "密碼不匹配",
-        description: "請確保兩次輸入的密碼相同。",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setLoading(true);
 
     try {
-      const success = await register(username, password);
+      const { error } = await register(email, password, username);
       
-      if (success) {
-        toast({
-          title: "註冊成功",
-          description: "您已成功註冊並登入系統。",
-        });
-        navigate("/dashboard");
-      } else {
+      if (error) {
         toast({
           title: "註冊失敗",
-          description: "用戶名可能已被使用，請嘗試其他用戶名。",
+          description: error.message,
           variant: "destructive",
         });
+      } else {
+        toast({
+          title: "註冊成功",
+          description: "歡迎加入！",
+        });
+        navigate("/dashboard");
       }
     } catch (error) {
       toast({
@@ -57,6 +48,11 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    navigate("/dashboard");
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
@@ -70,6 +66,17 @@ const Register = () => {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">電子郵件</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="輸入電子郵件"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="username">用戶名</Label>
                 <Input
@@ -91,17 +98,6 @@ const Register = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">確認密碼</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="再次輸入密碼"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button
@@ -109,7 +105,14 @@ const Register = () => {
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? "註冊中..." : "註冊"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    註冊中...
+                  </>
+                ) : (
+                  "註冊"
+                )}
               </Button>
               <div className="text-center text-sm">
                 已有帳號?{" "}

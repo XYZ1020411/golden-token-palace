@@ -1,129 +1,141 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 // User types
 export type UserRole = "vip" | "regular" | "admin";
 
-export interface User {
+export interface UserProfile {
   id: string;
   username: string;
-  role: UserRole;
+  display_name?: string;
+  avatar_url?: string;
   points: number;
-  vipLevel?: number;
-  lastCheckIn?: string;
+  vip_level: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
+  isLoading: boolean;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  register: (username: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, username: string) => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: any }>;
 }
-
-// Default users for the system
-const defaultUsers: Record<string, { password: string; user: User }> = {
-  "vip8888": {
-    password: "vip8888",
-    user: {
-      id: "1",
-      username: "vip8888",
-      role: "vip",
-      points: 100000000,
-      vipLevel: 5,
-      lastCheckIn: "",
-    },
-  },
-  "001": {
-    password: "001",
-    user: {
-      id: "2",
-      username: "001",
-      role: "vip",
-      points: 1e+64,
-      vipLevel: 5,
-      lastCheckIn: "",
-    },
-  },
-  "002": {
-    password: "002",
-    user: {
-      id: "3",
-      username: "002",
-      role: "admin",
-      points: 100000000,
-    },
-  },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check for stored user on initial load
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  // 獲取用戶配置文件
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return;
     }
+
+    setProfile(data);
+  };
+
+  // 監聽身份驗證狀態變化
+  useEffect(() => {
+    // 檢查當前會話
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+      setIsLoading(false);
+    });
+
+    // 設置身份驗證監聽器
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Login function
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call
-    const userEntry = defaultUsers[username];
-    
-    if (userEntry && userEntry.password === password) {
-      // Update last login date for VIP users
-      if (userEntry.user.role === "vip") {
-        const today = new Date().toISOString().split('T')[0];
-        userEntry.user.lastCheckIn = today;
-      }
-      
-      setUser(userEntry.user);
-      localStorage.setItem("user", JSON.stringify(userEntry.user));
-      return true;
-    }
-    
-    return false;
-  };
-
-  // Logout function
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-  };
-
-  // Register function (simplified for this demo)
-  const register = async (username: string, password: string): Promise<boolean> => {
-    // Check if username already exists
-    if (defaultUsers[username]) {
-      return false;
-    }
-    
-    // Create new user
-    const newUser: User = {
-      id: Date.now().toString(),
-      username,
-      role: "regular",
-      points: 100000000
-    };
-    
-    // In a real app, this would save to a database
-    defaultUsers[username] = {
+  // 登入
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
       password,
-      user: newUser
-    };
-    
-    // Auto login after registration
-    setUser(newUser);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    
-    return true;
+    });
+    return { error };
+  };
+
+  // 註冊
+  const register = async (email: string, password: string, username: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+        },
+      },
+    });
+    return { error };
+  };
+
+  // 登出
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+  };
+
+  // 更新配置文件
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return { error: new Error('No user logged in') };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (!error) {
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+    }
+
+    return { error };
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        profile,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        register,
+        updateProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          points: number | null
+          updated_at: string | null
+          username: string | null
+          vip_level: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          points?: number | null
+          updated_at?: string | null
+          username?: string | null
+          vip_level?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          points?: number | null
+          updated_at?: string | null
+          username?: string | null
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
       簽到系統: {
         Row: {
           created_at: string

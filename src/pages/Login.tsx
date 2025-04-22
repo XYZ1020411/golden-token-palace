@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -6,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, user } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -20,26 +22,20 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const success = await login(username, password);
+      const { error } = await login(email, password);
       
-      if (success) {
+      if (error) {
+        toast({
+          title: "登入失敗",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
         toast({
           title: "登入成功",
           description: "歡迎回來！",
         });
-        
-        // Redirect based on user role
-        if (user?.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
-      } else {
-        toast({
-          title: "登入失敗",
-          description: "用戶名或密碼錯誤，請重試。",
-          variant: "destructive",
-        });
+        navigate("/dashboard");
       }
     } catch (error) {
       toast({
@@ -52,6 +48,11 @@ const Login = () => {
     }
   };
 
+  if (isAuthenticated) {
+    navigate("/dashboard");
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
@@ -59,31 +60,24 @@ const Login = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">登入系統</CardTitle>
             <CardDescription>
-              輸入您的用戶名和密碼
+              輸入您的電子郵件和密碼
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">用戶名</Label>
+                <Label htmlFor="email">電子郵件</Label>
                 <Input
-                  id="username"
-                  placeholder="輸入用戶名"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="輸入電子郵件"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">密碼</Label>
-                  <Link
-                    to="/forgot-password"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    忘記密碼?
-                  </Link>
-                </div>
+                <Label htmlFor="password">密碼</Label>
                 <Input
                   id="password"
                   type="password"
@@ -100,7 +94,14 @@ const Login = () => {
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? "登入中..." : "登入"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    登入中...
+                  </>
+                ) : (
+                  "登入"
+                )}
               </Button>
               <div className="text-center text-sm">
                 還沒有帳號?{" "}
