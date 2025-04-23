@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,135 +10,35 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, MessageCircle, AlertCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { getAiAssistantResponse } from "@/services/aiAssistant";
+import { Bot, Send, MessageCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-  error?: boolean;
-}
+import { useAiChat } from "@/hooks/useAiChat";
+import { AiChatMessage } from "./AiChatMessage";
 
 export const AiCustomerService = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      content: "歡迎使用AI客服，有什麼可以幫助您的嗎？",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [retryAttempt, setRetryAttempt] = useState(0);
-  const { toast } = useToast();
-  const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
-  // 修正：Dialog開啟自動 focus，且按 send/enter 能傳送
+  const {
+    messages, isLoading, messagesEndRef, sendMessage
+  } = useAiChat();
+
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
 
-  // 自動滾動到最新消息
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    // 添加用戶訊息
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      isUser: true,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-    
-    try {
-      // 顯示打字中的訊息
-      const typingId = Date.now() + 1;
-      setMessages(prev => [...prev, {
-        id: typingId.toString(),
-        content: "AI 助手正在思考回覆...",
-        isUser: false,
-        timestamp: new Date()
-      }]);
-
-      // 使用 OpenAI API 獲取回應
-      const response = await getAiAssistantResponse(input);
-      
-      // 移除打字中的訊息
-      setMessages(prev => prev.filter(msg => msg.id !== typingId.toString()));
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        content: response.content,
-        isUser: false,
-        timestamp: new Date(),
-        error: response.status === 'error'
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      
-      if (response.status === 'error') {
-        setRetryAttempt(prev => prev + 1);
-        if (retryAttempt < 2) {
-          toast({
-            title: "系統提示",
-            description: "AI回覆出現問題，系統將自動重試",
-            variant: "default",
-          });
-        } else {
-          toast({
-            title: "系統提示",
-            description: "AI回覆持續出現問題，請稍後再試",
-            variant: "destructive",
-          });
-          setRetryAttempt(0);
-        }
-      } else {
-        // 成功回應，重置重試次數
-        setRetryAttempt(0);
-      }
-    } catch (error) {
-      console.error("AI回覆錯誤:", error);
-      toast({
-        title: "系統錯誤",
-        description: "無法連接到AI客服，請稍後再試",
-        variant: "destructive",
-      });
-      
-      // 添加錯誤訊息
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        content: "抱歉，系統暫時無法回應，請稍後再試。",
-        isUser: false,
-        timestamp: new Date(),
-        error: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
+  const handleSend = () => {
+    if (input.trim()) {
+      sendMessage(input);
+      setInput("");
     }
   };
 
@@ -167,34 +66,7 @@ export const AiCustomerService = () => {
           <ScrollArea className="flex-1 pr-4 mb-4">
             <div className="space-y-4">
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`p-3 rounded-lg max-w-[80%] ${
-                      message.isUser
-                        ? "bg-primary text-primary-foreground"
-                        : message.error 
-                          ? "bg-red-100 text-red-800"
-                          : "bg-muted"
-                    }`}
-                  >
-                    {message.error && (
-                      <div className="flex items-center mb-1 text-red-600">
-                        <AlertCircle className="h-4 w-4 mr-1" />
-                        <span className="text-xs font-medium">錯誤</span>
-                      </div>
-                    )}
-                    <p className="text-sm">{message.content}</p>
-                    <p className="text-xs opacity-70 mt-1 text-right">
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </div>
+                <AiChatMessage message={message} key={message.id} />
               ))}
               <div ref={messagesEndRef} />
             </div>
@@ -205,15 +77,15 @@ export const AiCustomerService = () => {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={e => e.key === "Enter" && handleSend()}
                 placeholder="輸入您的問題..."
                 className="flex-1"
                 aria-label="問題輸入"
                 disabled={isLoading}
               />
-              <Button 
-                size="icon" 
-                onClick={handleSendMessage} 
+              <Button
+                size="icon"
+                onClick={handleSend}
                 aria-label="發送訊息"
                 disabled={isLoading}
               >
