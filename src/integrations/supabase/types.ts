@@ -9,6 +9,72 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customer_support: {
+        Row: {
+          admin_response: string | null
+          ai_response: string | null
+          compensation_points: number | null
+          created_at: string | null
+          id: string
+          message: string
+          resolved: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          ai_response?: string | null
+          compensation_points?: number | null
+          created_at?: string | null
+          id?: string
+          message: string
+          resolved?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          ai_response?: string | null
+          compensation_points?: number | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          resolved?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          points: number | null
+          updated_at: string | null
+          username: string | null
+          vip_level: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          points?: number | null
+          updated_at?: string | null
+          username?: string | null
+          vip_level?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          points?: number | null
+          updated_at?: string | null
+          username?: string | null
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
       簽到系統: {
         Row: {
           created_at: string

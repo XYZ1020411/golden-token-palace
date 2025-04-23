@@ -17,6 +17,14 @@ serve(async (req) => {
     const { customerMessage } = await req.json()
     const openAiKey = Deno.env.get('OPENAI_API_KEY')
 
+    if (!openAiKey) {
+      throw new Error("OpenAI API Key is not configured")
+    }
+
+    if (!customerMessage || typeof customerMessage !== 'string') {
+      throw new Error("客戶訊息不正確或為空")
+    }
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -29,7 +37,10 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。'
+            content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。' +
+                     '如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。' +
+                     '如果用戶詢問關於商品兌換、點數或VIP功能等問題，可以提供相應的指引。' + 
+                     '回應時請保持簡潔且有幫助性。'
           },
           {
             role: 'user',
@@ -42,6 +53,8 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => null)
+      console.error('OpenAI API Error:', errorData || response.statusText)
       throw new Error('AI API request failed')
     }
 
@@ -53,7 +66,10 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      response: '抱歉，AI 助手暫時無法使用。請稍後再試。'
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

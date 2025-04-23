@@ -13,17 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, MessageCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-
-// AI 問答模擬 - 可擴充
-const AI_RESPONSES: { [key: string]: string } = {
-  "你好": "您好！很高興為您服務，請問有什麼可以幫助您的嗎？",
-  "點數": "您可在錢包頁面查看點數餘額。若要獲得更多點數，歡迎使用 VIP 專區或分享活動獲贈。",
-  "條碼": "您在收件夾可查看已兌換商品的條碼。給服務人員掃描條碼即可兌換。",
-  "商品": "所有可兌換商品都在首頁『商品券兌換』。完成兌換後在『收件夾』取得條碼。",
-  "新聞": "新聞請前往新聞專區，可以瀏覽最新資訊。",
-  "天氣": "目前台風資訊已下架，氣象相關請查閱氣象頁。",
-  "default": "感謝您的提問！如需真人協助會有專人跟進，或請提供更具體關鍵字。"
-};
+import { getAiAssistantResponse } from "@/services/aiAssistant";
 
 interface Message {
   id: string;
@@ -43,8 +33,10 @@ export const AiCustomerService = () => {
       timestamp: new Date(),
     },
   ]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 修正：Dialog開啟自動 focus，且按 send/enter 能傳送
   useEffect(() => {
@@ -53,8 +45,13 @@ export const AiCustomerService = () => {
     }
   }, [isOpen]);
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
+  // 自動滾動到最新消息
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading) return;
 
     // 添加用戶訊息
     const userMessage: Message = {
@@ -66,25 +63,47 @@ export const AiCustomerService = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInput("");
+    setIsLoading(true);
     
-    // 生成 AI 回覆
-    setTimeout(() => {
-      let response = AI_RESPONSES.default;
-      // 支援模糊關鍵詞
-      for (const keyword in AI_RESPONSES) {
-        if (keyword !== "default" && input.includes(keyword)) {
-          response = AI_RESPONSES[keyword];
-          break;
-        }
-      }
+    try {
+      // 使用 OpenAI API 獲取回應
+      const response = await getAiAssistantResponse(input);
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: response,
+        content: response.content,
         isUser: false,
         timestamp: new Date(),
       };
+      
       setMessages(prev => [...prev, aiMessage]);
-    }, 600);
+      
+      if (response.status === 'error') {
+        toast({
+          title: "系統提示",
+          description: "AI回覆出現問題，請稍後再試",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("AI回覆錯誤:", error);
+      toast({
+        title: "系統錯誤",
+        description: "無法連接到AI客服，請稍後再試",
+        variant: "destructive",
+      });
+      
+      // 添加錯誤訊息
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "抱歉，系統暫時無法回應，請稍後再試。",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -138,6 +157,7 @@ export const AiCustomerService = () => {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
           <DialogFooter className="flex-shrink-0">
@@ -150,8 +170,14 @@ export const AiCustomerService = () => {
                 placeholder="輸入您的問題..."
                 className="flex-1"
                 aria-label="問題輸入"
+                disabled={isLoading}
               />
-              <Button size="icon" onClick={handleSendMessage} aria-label="發送訊息">
+              <Button 
+                size="icon" 
+                onClick={handleSendMessage} 
+                aria-label="發送訊息"
+                disabled={isLoading}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>

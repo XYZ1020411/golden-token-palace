@@ -14,7 +14,14 @@ export const getAiAssistantResponse = async (
       body: { customerMessage }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase Function Error:', error);
+      throw error;
+    }
+
+    if (!data || !data.response) {
+      throw new Error('無效的 AI 回應數據');
+    }
 
     return {
       content: data.response,
