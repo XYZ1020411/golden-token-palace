@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // User types
@@ -18,6 +19,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (username: string, password: string) => Promise<boolean>;
+  socialLogin: (provider: string) => Promise<boolean>;
 }
 
 // Default users for the system
@@ -88,6 +90,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
+  // Social login function
+  const socialLogin = async (provider: string): Promise<boolean> => {
+    // Mock social login for demo purposes
+    // In a real app, this would interact with actual OAuth providers
+    console.log(`Attempting to login with ${provider}`);
+    
+    // Simulate successful login
+    const mockSocialUser: User = {
+      id: `social-${Date.now()}`,
+      username: `${provider}_user_${Math.floor(Math.random() * 1000)}`,
+      role: "regular",
+      points: 100000000
+    };
+    
+    // Add to default users for session persistence
+    defaultUsers[mockSocialUser.username] = {
+      password: "social-auth", // This password won't be used
+      user: mockSocialUser
+    };
+    
+    setUser(mockSocialUser);
+    localStorage.setItem("user", JSON.stringify(mockSocialUser));
+    return true;
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -123,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, register, socialLogin }}>
       {children}
     </AuthContext.Provider>
   );

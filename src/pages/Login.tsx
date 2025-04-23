@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -6,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
+import { Facebook, Mail, Globe, MessageSquare } from "lucide-react";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, user } = useAuth();
+  const { login, user, socialLogin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +41,39 @@ const Login = () => {
         toast({
           title: "登入失敗",
           description: "用戶名或密碼錯誤，請重試。",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "登入失敗",
+        description: "發生錯誤，請稍後再試。",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: string) => {
+    setLoading(true);
+    try {
+      const success = await socialLogin(provider);
+      if (success) {
+        toast({
+          title: "登入成功",
+          description: "歡迎回來！",
+        });
+        
+        if (user?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        toast({
+          title: "登入失敗",
+          description: "無法使用社交媒體登入，請重試。",
           variant: "destructive",
         });
       }
@@ -102,6 +138,45 @@ const Login = () => {
               >
                 {loading ? "登入中..." : "登入"}
               </Button>
+              
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-muted" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    或使用社交媒體登入
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSocialLogin("facebook")}
+                  disabled={loading}
+                >
+                  <Facebook className="h-5 w-5 text-blue-600" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSocialLogin("google")}
+                  disabled={loading}
+                >
+                  <Globe className="h-5 w-5 text-red-500" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleSocialLogin("discord")}
+                  disabled={loading}
+                >
+                  <MessageSquare className="h-5 w-5 text-indigo-500" />
+                </Button>
+              </div>
+              
               <div className="text-center text-sm">
                 還沒有帳號?{" "}
                 <Link to="/register" className="text-primary hover:underline">

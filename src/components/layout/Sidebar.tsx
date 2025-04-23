@@ -1,236 +1,235 @@
 
+import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { useAdmin } from "@/context/AdminContext";
-import { Button } from "@/components/ui/button";
 import {
-  CreditCard,
-  Layout,
-  Gift,
-  CloudSun,
-  FileText,
-  User,
+  LayoutDashboard,
+  Wallet,
+  Award,
+  Cloud,
+  Newspaper,
   Settings,
-  Users,
-  CalendarCheck,
-  Database,
-  MessageCircle,
-  Tag,
-  ScanBarcode,
-  Thermometer,
-  Inbox
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  LogOut,
+  User,
+  Inbox,
+  Terminal
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
-interface SidebarItemProps {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  active?: boolean;
-  badge?: string | number;
-}
-
-const SidebarItem = ({ href, icon, title, active, badge }: SidebarItemProps) => {
-  return (
-    <Link
-      to={href}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 transition-all relative",
-        active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-      )}
-    >
-      {icon}
-      <span>{title}</span>
-      {badge && (
-        <span className="absolute right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
-          {badge}
-        </span>
-      )}
-    </Link>
-  );
-};
-
-const Sidebar = () => {
+export function Sidebar() {
   const location = useLocation();
-  const { user } = useAuth();
-  const { currentTemperature, supportMessages } = useAdmin();
+  const { user, logout } = useAuth();
+  const isMobile = useMobile();
+  const [collapsed, setCollapsed] = React.useState(isMobile);
+  const [toggled, setToggled] = React.useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
-  
-  // Count unresolved support messages
-  const unresolvedCount = supportMessages?.filter(m => !m.resolved).length || 0;
+  const currentPath = location.pathname;
 
-  // Define common menu items
-  const menuItems = [
+  // Handle sidebar toggling
+  const handleToggle = () => {
+    setToggled(!toggled);
+  };
+
+  // Handle sidebar collapsing (only used on desktop)
+  const handleCollapse = () => {
+    setCollapsed(!collapsed);
+  };
+
+  // Reset toggled state when route changes
+  React.useEffect(() => {
+    setToggled(false);
+  }, [currentPath]);
+
+  // On mobile, always collapse sidebar
+  React.useEffect(() => {
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }, [isMobile]);
+
+  // Define navigation items
+  const navigationItems = [
     {
+      icon: LayoutDashboard,
+      label: "儀表板",
       href: "/dashboard",
-      icon: <Layout className="h-5 w-5" />,
-      title: "儀表板",
     },
     {
+      icon: Wallet,
+      label: "錢包",
       href: "/wallet",
-      icon: <CreditCard className="h-5 w-5" />,
-      title: "錢包系統",
     },
     {
-      href: "/inbox",
-      icon: <Inbox className="h-5 w-5" />,
-      title: "收件夾",
-    },
-    {
-      href: "/weather",
-      icon: <CloudSun className="h-5 w-5" />,
-      title: "天氣服務",
-    },
-    {
-      href: "/news",
-      icon: <FileText className="h-5 w-5" />,
-      title: "新聞資訊",
-    },
-    {
-      href: "/profile",
-      icon: <User className="h-5 w-5" />,
-      title: "個人資料",
-    },
-  ];
-
-  // VIP-specific menu items
-  const vipMenuItems = [
-    {
+      icon: Award,
+      label: "VIP獎勵",
       href: "/vip",
-      icon: <Gift className="h-5 w-5" />,
-      title: "VIP專區",
+    },
+    {
+      icon: Cloud,
+      label: "天氣資訊",
+      href: "/weather",
+    },
+    {
+      icon: Newspaper,
+      label: "新聞",
+      href: "/news",
+    },
+    {
+      icon: Inbox,
+      label: "收件夾",
+      href: "/inbox"
+    },
+    {
+      icon: User,
+      label: "個人資料",
+      href: "/profile",
     },
   ];
 
-  // Admin-specific menu items
-  const adminMenuItems = [
+  // Admin navigation items
+  const adminItems = user?.role === "admin" ? [
     {
+      icon: Settings,
+      label: "管理員",
       href: "/admin",
-      icon: <Settings className="h-5 w-5" />,
-      title: "管理員選項",
     },
     {
-      href: "/admin/users",
-      icon: <Users className="h-5 w-5" />,
-      title: "用戶管理",
+      icon: Terminal,
+      label: "後台管理",
+      href: "/backend",
     },
-    {
-      href: "/admin/announcements",
-      icon: <CalendarCheck className="h-5 w-5" />,
-      title: "系統公告",
-    },
-    {
-      href: "/admin/points",
-      icon: <Database className="h-5 w-5" />,
-      title: "點數管理",
-    },
-    {
-      href: "/admin/products",
-      icon: <Tag className="h-5 w-5" />,
-      title: "商品設定",
-    },
-    {
-      href: "/scan",
-      icon: <ScanBarcode className="h-5 w-5" />,
-      title: "條碼掃描",
-    },
-    {
-      href: "/admin/support",
-      icon: <MessageCircle className="h-5 w-5" />,
-      title: "AI客服",
-      badge: unresolvedCount || undefined,
-    },
-  ];
+  ] : [];
 
   return (
-    <aside className="hidden md:flex w-64 shrink-0 border-r border-r-border bg-sidebar-background flex-col">
-      <div className="flex flex-col gap-2 p-4">
-        <div className="flex items-center justify-between p-2">
-          <h1 className="font-bold text-lg">渣打好公司</h1>
-          <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-full">
-            <Thermometer className="h-3 w-3 text-blue-500" />
-            <span>{currentTemperature}</span>
-          </div>
-        </div>
-        
-        <div className="py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold">主菜單</h2>
-          <div className="space-y-1">
-            {menuItems.map((item) => (
-              <SidebarItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                title={item.title}
-                active={isActive(item.href)}
-              />
-            ))}
-          </div>
-        </div>
+    <>
+      {/* Mobile toggle button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed top-4 left-4 z-50 md:hidden"
+        onClick={handleToggle}
+      >
+        <Menu className="h-4 w-4" />
+      </Button>
 
-        {user?.role === "vip" && (
-          <div className="py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold text-amber-500">VIP服務</h2>
-            <div className="space-y-1">
-              {vipMenuItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  title={item.title}
-                  active={isActive(item.href)}
-                />
-              ))}
-            </div>
-          </div>
+      {/* Mobile overlay */}
+      {toggled && isMobile && (
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+          onClick={handleToggle}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed top-0 left-0 z-40 h-full border-r bg-background transition-all duration-300",
+          collapsed ? "w-[4.5rem]" : "w-64",
+          isMobile && !toggled && "translate-x-[-100%]",
+          isMobile && toggled && "translate-x-0"
         )}
-
-        {user?.role === "admin" && (
-          <div className="py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold">管理員功能</h2>
-            <div className="space-y-1">
-              {adminMenuItems.map((item) => (
-                <SidebarItem
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  title={item.title}
-                  active={isActive(item.href)}
-                  badge={item.badge}
-                />
-              ))}
-            </div>
+      >
+        <div className="flex h-full flex-col">
+          {/* Sidebar Header */}
+          <div className="flex h-16 items-center border-b px-4">
+            {!collapsed && <span className="text-xl font-bold">系統選單</span>}
+            {/* Collapse button (desktop only) */}
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("ml-auto", collapsed && "rotate-180")}
+                onClick={handleCollapse}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            )}
+            {/* Close button (mobile only) */}
+            {isMobile && toggled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                onClick={handleToggle}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-        )}
 
-        <div className="mt-auto p-4">
-          <div className="rounded-lg bg-sidebar-accent p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              <span className="font-medium">需要幫助?</span>
-            </div>
-            <p className="mb-3 text-sm text-sidebar-foreground">
-              有任何問題嗎？我們的AI客服隨時為您服務。
-            </p>
+          {/* Sidebar Content */}
+          <ScrollArea className="flex-1">
+            <nav className="flex flex-col gap-1 p-2">
+              {/* Default navigation items */}
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant={currentPath === item.href ? "default" : "ghost"}
+                  className={cn(
+                    "justify-start",
+                    collapsed && "justify-center"
+                  )}
+                  asChild
+                >
+                  <Link to={item.href}>
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                </Button>
+              ))}
+
+              {/* Admin items */}
+              {adminItems.length > 0 && (
+                <>
+                  <div
+                    className={cn(
+                      "my-2 border-t",
+                      collapsed && "mx-2"
+                    )}
+                  />
+                  {adminItems.map((item) => (
+                    <Button
+                      key={item.href}
+                      variant={currentPath === item.href ? "default" : "ghost"}
+                      className={cn(
+                        "justify-start",
+                        collapsed && "justify-center"
+                      )}
+                      asChild
+                    >
+                      <Link to={item.href}>
+                        <item.icon className="h-4 w-4 mr-2" />
+                        {!collapsed && <span>{item.label}</span>}
+                      </Link>
+                    </Button>
+                  ))}
+                </>
+              )}
+            </nav>
+          </ScrollArea>
+
+          {/* Sidebar Footer */}
+          <div className="mt-auto border-t p-2">
             <Button
-              onClick={() => {
-                const aiCustomerService = document.querySelector('[aria-label="開啟AI客服"]');
-                if (aiCustomerService instanceof HTMLElement) {
-                  aiCustomerService.click();
-                }
-              }}
-              className="block w-full rounded bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
+              variant="ghost"
+              className={cn(
+                "w-full justify-start",
+                collapsed && "justify-center"
+              )}
+              onClick={logout}
             >
-              聯繫客服
+              <LogOut className="h-4 w-4 mr-2" />
+              {!collapsed && <span>登出</span>}
             </Button>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
-};
-
-export default Sidebar;
+}

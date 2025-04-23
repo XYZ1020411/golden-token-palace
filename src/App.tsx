@@ -16,7 +16,8 @@ import News from "./pages/News";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import ScanBarcode from "./pages/ScanBarcode";
-import InboxPage from "./pages/Inbox"; // 新增
+import InboxPage from "./pages/Inbox";
+import BackendManagement from "./pages/BackendManagement";
 
 import { AuthProvider } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
@@ -51,7 +52,8 @@ const App = () => (
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/scan" element={<ScanBarcode />} />
                       <Route path="/profile" element={<Profile />} />
-                      <Route path="/inbox" element={<InboxPage />} /> {/* 註冊新收件夾頁 */}
+                      <Route path="/inbox" element={<InboxPage />} />
+                      <Route path="/backend" element={<BackendManagement />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>

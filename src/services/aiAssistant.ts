@@ -11,7 +11,11 @@ export const getAiAssistantResponse = async (
 ): Promise<AiAssistantResponse> => {
   try {
     const { data, error } = await supabase.functions.invoke('ai-customer-service', {
-      body: { customerMessage }
+      body: { customerMessage },
+      // Set a longer timeout for the function
+      options: {
+        timeout: 15000 // 15 seconds
+      }
     });
 
     if (error) {

@@ -25,37 +25,56 @@ serve(async (req) => {
       throw new Error("客戶訊息不正確或為空")
     }
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。' +
-                     '如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。' +
-                     '如果用戶詢問關於商品兌換、點數或VIP功能等問題，可以提供相應的指引。' + 
-                     '回應時請保持簡潔且有幫助性。'
-          },
-          {
-            role: 'user',
-            content: customerMessage
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
-    })
+    // Call OpenAI API with retry mechanism
+    let attempts = 0;
+    let response = null;
+    let success = false;
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null)
-      console.error('OpenAI API Error:', errorData || response.statusText)
-      throw new Error('AI API request failed')
+    while (attempts < 3 && !success) {
+      try {
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。' +
+                        '如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。' +
+                        '如果用戶詢問關於商品兌換、點數或VIP功能等問題，可以提供相應的指引。' + 
+                        '回應時請保持簡潔且有幫助性。'
+              },
+              {
+                role: 'user',
+                content: customerMessage
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+        
+        if (response.ok) {
+          success = true;
+        } else {
+          attempts++;
+          // Add a small delay before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (error) {
+        attempts++;
+        console.error("API request attempt failed:", error);
+        // Add a small delay before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (!success || !response) {
+      throw new Error('AI API request failed after multiple attempts')
     }
 
     const data = await response.json()

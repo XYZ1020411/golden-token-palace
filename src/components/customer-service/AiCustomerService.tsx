@@ -11,15 +11,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, MessageCircle } from "lucide-react";
+import { Bot, Send, MessageCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { getAiAssistantResponse } from "@/services/aiAssistant";
+import { useAuth } from "@/context/AuthContext";
 
 interface Message {
   id: string;
   content: string;
   isUser: boolean;
   timestamp: Date;
+  error?: boolean;
 }
 
 export const AiCustomerService = () => {
@@ -34,7 +36,9 @@ export const AiCustomerService = () => {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -66,24 +70,50 @@ export const AiCustomerService = () => {
     setIsLoading(true);
     
     try {
+      // 顯示打字中的訊息
+      const typingId = Date.now() + 1;
+      setMessages(prev => [...prev, {
+        id: typingId.toString(),
+        content: "AI 助手正在思考回覆...",
+        isUser: false,
+        timestamp: new Date()
+      }]);
+
       // 使用 OpenAI API 獲取回應
       const response = await getAiAssistantResponse(input);
       
+      // 移除打字中的訊息
+      setMessages(prev => prev.filter(msg => msg.id !== typingId.toString()));
+      
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         content: response.content,
         isUser: false,
         timestamp: new Date(),
+        error: response.status === 'error'
       };
       
       setMessages(prev => [...prev, aiMessage]);
       
       if (response.status === 'error') {
-        toast({
-          title: "系統提示",
-          description: "AI回覆出現問題，請稍後再試",
-          variant: "destructive",
-        });
+        setRetryAttempt(prev => prev + 1);
+        if (retryAttempt < 2) {
+          toast({
+            title: "系統提示",
+            description: "AI回覆出現問題，系統將自動重試",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "系統提示",
+            description: "AI回覆持續出現問題，請稍後再試",
+            variant: "destructive",
+          });
+          setRetryAttempt(0);
+        }
+      } else {
+        // 成功回應，重置重試次數
+        setRetryAttempt(0);
       }
     } catch (error) {
       console.error("AI回覆錯誤:", error);
@@ -95,10 +125,11 @@ export const AiCustomerService = () => {
       
       // 添加錯誤訊息
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         content: "抱歉，系統暫時無法回應，請稍後再試。",
         isUser: false,
         timestamp: new Date(),
+        error: true
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -144,9 +175,17 @@ export const AiCustomerService = () => {
                     className={`p-3 rounded-lg max-w-[80%] ${
                       message.isUser
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : message.error 
+                          ? "bg-red-100 text-red-800"
+                          : "bg-muted"
                     }`}
                   >
+                    {message.error && (
+                      <div className="flex items-center mb-1 text-red-600">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        <span className="text-xs font-medium">錯誤</span>
+                      </div>
+                    )}
                     <p className="text-sm">{message.content}</p>
                     <p className="text-xs opacity-70 mt-1 text-right">
                       {message.timestamp.toLocaleTimeString([], {
@@ -178,7 +217,7 @@ export const AiCustomerService = () => {
                 aria-label="發送訊息"
                 disabled={isLoading}
               >
-                <Send className="h-4 w-4" />
+                <Send className={`h-4 w-4 ${isLoading ? "animate-pulse" : ""}`} />
               </Button>
             </div>
           </DialogFooter>
