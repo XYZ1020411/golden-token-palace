@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// 移除 interface export，僅保留給型別推斷用
 export interface AiAssistantResponse {
   content: string;
   status: 'success' | 'error';
@@ -11,28 +10,45 @@ export const getAiAssistantResponse = async (
   customerMessage: string
 ): Promise<AiAssistantResponse> => {
   try {
-    // 修正 invoke 寫法
-    const { data, error } = await supabase.functions.invoke('ai-customer-service', {
-      body: { customerMessage },
-      // Supabase v2 invoke API 使用 headers 傳遞 timeout
-      headers: {
-        "x-timeout-ms": "15000"
+    // 增加重試機制
+    let attempts = 0;
+    const maxAttempts = 3;
+    let lastError: Error | null = null;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const { data, error } = await supabase.functions.invoke('ai-customer-service', {
+          body: { customerMessage },
+          headers: {
+            "x-timeout-ms": "15000"
+          }
+        });
+
+        if (error) {
+          console.error('Supabase Function Error:', error);
+          throw error;
+        }
+
+        if (!data || !data.response) {
+          throw new Error('無效的 AI 回應數據');
+        }
+
+        return {
+          content: data.response,
+          status: 'success'
+        };
+      } catch (err) {
+        console.warn(`AI 回應嘗試 ${attempts + 1}/${maxAttempts} 失敗:`, err);
+        lastError = err instanceof Error ? err : new Error(String(err));
+        attempts++;
+        // 增加重試間隔時間
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       }
-    });
-
-    if (error) {
-      console.error('Supabase Function Error:', error);
-      throw error;
     }
-
-    if (!data || !data.response) {
-      throw new Error('無效的 AI 回應數據');
-    }
-
-    return {
-      content: data.response,
-      status: 'success'
-    };
+    
+    // 所有重試都失敗
+    console.error('AI Assistant Error after all retries:', lastError);
+    throw lastError;
   } catch (error) {
     console.error('AI Assistant Error:', error);
     return {

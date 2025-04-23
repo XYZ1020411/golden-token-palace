@@ -25,13 +25,17 @@ serve(async (req) => {
       throw new Error("客戶訊息不正確或為空")
     }
 
-    // Call OpenAI API with retry mechanism
+    // Call OpenAI API with improved retry mechanism
     let attempts = 0;
+    const maxAttempts = 3;
     let response = null;
     let success = false;
+    let lastError = null;
 
-    while (attempts < 3 && !success) {
+    while (attempts < maxAttempts && !success) {
       try {
+        console.log(`嘗試 OpenAI API 請求 (${attempts + 1}/${maxAttempts})`)
+        
         response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -59,26 +63,45 @@ serve(async (req) => {
         });
         
         if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`非預期的回應格式: ${contentType}`);
+          }
+          
           success = true;
         } else {
           attempts++;
-          // Add a small delay before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          const errorText = await response.text();
+          lastError = `API 請求失敗 (狀態碼: ${response.status}): ${errorText}`;
+          console.error(lastError);
+          
+          // Add an exponential backoff before retrying
+          const delay = Math.pow(2, attempts) * 500;
+          await new Promise(resolve => setTimeout(resolve, delay));
         }
       } catch (error) {
         attempts++;
-        console.error("API request attempt failed:", error);
-        // Add a small delay before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        lastError = `API 請求異常: ${error.message || error}`;
+        console.error(lastError);
+        
+        // Add an exponential backoff before retrying
+        const delay = Math.pow(2, attempts) * 500;
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 
     if (!success || !response) {
-      throw new Error('AI API request failed after multiple attempts')
+      throw new Error(`AI API 請求失敗，原因: ${lastError}`)
     }
 
-    const data = await response.json()
-    const aiResponse = data.choices[0].message.content
+    const data = await response.json();
+    console.log("OpenAI API 回應成功");
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      throw new Error('無效的 OpenAI API 回應格式');
+    }
+    
+    const aiResponse = data.choices[0].message.content;
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

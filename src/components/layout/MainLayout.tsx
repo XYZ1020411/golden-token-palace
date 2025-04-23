@@ -1,6 +1,7 @@
+
 import { ReactNode } from "react";
 import Navbar from "./Navbar";
-import Sidebar from "@/components/layout/Sidebar";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
