@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Database, Save, Upload, Download, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
 
 interface BackendSystemSettingsProps {
   backupData: () => string;
@@ -33,9 +34,9 @@ export const BackendSystemSettings = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       setBackupTimestamp(new Date().toLocaleString());
-      
+
       toast({
         title: "備份成功",
         description: "系統數據已成功備份"
@@ -59,7 +60,7 @@ export const BackendSystemSettings = ({
       });
       return;
     }
-    
+
     try {
       const success = restoreData(fileContent);
       if (success) {
@@ -82,7 +83,7 @@ export const BackendSystemSettings = ({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -109,7 +110,6 @@ export const BackendSystemSettings = ({
               <p className="text-sm text-muted-foreground mb-4">
                 創建系統數據的完整備份，包括用戶、公告和設置
               </p>
-              
               <div className="flex justify-between items-center">
                 <div>
                   {backupTimestamp && (
@@ -124,20 +124,17 @@ export const BackendSystemSettings = ({
                 </Button>
               </div>
             </div>
-            
             <div className="border-t pt-6">
               <h3 className="text-lg font-medium">數據還原</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 從先前創建的備份中還原系統數據
               </p>
-              
               <Alert className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   警告：還原操作將覆蓋系統中現有的所有數據，此操作無法撤銷。
                 </AlertDescription>
               </Alert>
-              
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Input
@@ -147,8 +144,8 @@ export const BackendSystemSettings = ({
                     className="hidden"
                     onChange={handleFileUpload}
                   />
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center gap-2"
                     onClick={() => document.getElementById("backup-file")?.click()}
                   >
@@ -159,7 +156,6 @@ export const BackendSystemSettings = ({
                     {fileContent ? "已選擇備份文件" : "未選擇文件"}
                   </span>
                 </div>
-                
                 <div>
                   <Label htmlFor="backup-content" className="text-sm font-medium">
                     或貼上備份內容：
@@ -173,7 +169,6 @@ export const BackendSystemSettings = ({
                     className="font-mono text-sm mt-2"
                   />
                 </div>
-                
                 <div className="flex justify-end">
                   <Button onClick={handleRestore} className="flex items-center gap-2">
                     <Save className="h-4 w-4" />

@@ -14,9 +14,20 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login, user, socialLogin } = useAuth();
+  const { login, socialLogin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // 用戶登入成功後根據角色導向
+  const redirectAfterLogin = (role?: string) => {
+    if (role === "admin") {
+      navigate("/admin");
+    } else if (role === "regular" || role === "vip") {
+      navigate("/dashboard");
+    } else {
+      navigate("/");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,19 +35,16 @@ const Login = () => {
 
     try {
       const success = await login(username, password);
-      
+
       if (success) {
         toast({
           title: "登入成功",
           description: "歡迎回來！",
         });
-        
-        // Redirect based on user role
-        if (user?.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
+
+        // 這裡取得新用戶資訊，然後重導
+        const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+        redirectAfterLogin(userInfo.role);
       } else {
         toast({
           title: "登入失敗",
@@ -64,12 +72,10 @@ const Login = () => {
           title: "登入成功",
           description: "歡迎回來！",
         });
-        
-        if (user?.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/dashboard");
-        }
+
+        // 這裡取得新用戶資訊，然後重導
+        const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+        redirectAfterLogin(userInfo.role);
       } else {
         toast({
           title: "登入失敗",

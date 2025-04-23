@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomerSupportMessage } from "@/context/AdminContext";
 import { Bot, MessageCircle, AlertCircle, Search } from "lucide-react";
-import { AiAssistantResponse } from "@/services/aiAssistant";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getAiAssistantResponse, AiAssistantResponse } from "@/services/aiAssistant";
 
 interface BackendAiSettingsProps {
   supportMessages: CustomerSupportMessage[];
@@ -26,8 +26,8 @@ export const BackendAiSettings = ({
   const [responseText, setResponseText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const filteredMessages = supportMessages.filter(message => 
+
+  const filteredMessages = supportMessages.filter(message =>
     message.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     message.message.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -49,7 +49,7 @@ export const BackendAiSettings = ({
     if (!responseText.trim()) {
       return;
     }
-    
+
     const success = respondToSupportMessage(messageId, responseText);
     if (success) {
       setResponseText("");
@@ -101,7 +101,6 @@ export const BackendAiSettings = ({
                 <div className="text-sm mb-3 bg-muted p-3 rounded-md">
                   {message.message}
                 </div>
-                
                 {message.adminResponse && (
                   <div className="text-sm mb-3">
                     <div className="font-medium mb-1">回覆:</div>
@@ -110,19 +109,7 @@ export const BackendAiSettings = ({
                     </div>
                   </div>
                 )}
-                
-                {message.aiResponse && !message.adminResponse && (
-                  <div className="text-sm mb-3">
-                    <div className="font-medium mb-1 flex items-center">
-                      <Bot className="h-4 w-4 mr-1" />
-                      AI回覆:
-                    </div>
-                    <div className="bg-green-50 p-3 rounded-md text-green-700">
-                      {message.aiResponse}
-                    </div>
-                  </div>
-                )}
-                
+                {/* AI 回覆目前仍放不到資料庫，僅做即時輔助 */}
                 {!message.adminResponse && (
                   <div className="space-y-2">
                     {selectedMessage === message.id ? (
@@ -134,9 +121,9 @@ export const BackendAiSettings = ({
                           rows={4}
                         />
                         <div className="flex gap-2 justify-end">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleAiAssist(message.id, message.message)}
                             disabled={isLoading}
                           >
@@ -157,7 +144,6 @@ export const BackendAiSettings = ({
                     )}
                   </div>
                 )}
-                
                 <div className="flex justify-end mt-2">
                   <Button
                     variant="ghost"
@@ -169,7 +155,6 @@ export const BackendAiSettings = ({
                 </div>
               </div>
             ))}
-            
             {filteredMessages.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 沒有找到符合搜尋條件的客戶訊息

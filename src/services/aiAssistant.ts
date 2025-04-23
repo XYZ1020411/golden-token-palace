@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-interface AiAssistantResponse {
+// 移除 interface export，僅保留給型別推斷用
+export interface AiAssistantResponse {
   content: string;
   status: 'success' | 'error';
 }
@@ -10,11 +11,12 @@ export const getAiAssistantResponse = async (
   customerMessage: string
 ): Promise<AiAssistantResponse> => {
   try {
+    // 修正 invoke 寫法
     const { data, error } = await supabase.functions.invoke('ai-customer-service', {
       body: { customerMessage },
-      // Set a longer timeout for the function
-      options: {
-        timeout: 15000 // 15 seconds
+      // Supabase v2 invoke API 使用 headers 傳遞 timeout
+      headers: {
+        "x-timeout-ms": "15000"
       }
     });
 
