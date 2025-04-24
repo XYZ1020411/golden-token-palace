@@ -1,11 +1,10 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Gift, Users, CreditCard, CloudSun, Database } from "lucide-react";
 
 const Index = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -39,15 +38,24 @@ const Index = () => {
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
             安全、高效的點數管理，VIP會員專屬福利，以及豐富的資訊服務
           </p>
-          {isAuthenticated ? (
-            <Button size="lg" asChild>
-              <Link to="/dashboard">進入儀表板</Link>
-            </Button>
-          ) : (
-            <Button size="lg" asChild>
-              <Link to="/register">立即開始使用</Link>
-            </Button>
-          )}
+          <div className="flex flex-col items-center gap-4 mt-8">
+            {isAuthenticated ? (
+              <>
+                <Button size="lg" className="w-64" asChild>
+                  <Link to="/dashboard">進入客戶系統</Link>
+                </Button>
+                {user?.role === 'admin' && (
+                  <Button size="lg" variant="outline" className="w-64" asChild>
+                    <Link to="/backend">進入後台管理</Link>
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button size="lg" asChild>
+                <Link to="/register">立即開始使用</Link>
+              </Button>
+            )}
+          </div>
         </section>
 
         {/* Features */}
