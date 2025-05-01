@@ -1,7 +1,8 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { Gift, Users, CreditCard, CloudSun, Database } from "lucide-react";
+import { Gift, Users, CreditCard, CloudSun, Database, Target, Star, Balloon } from "lucide-react";
 
 const Index = () => {
   const { isAuthenticated, user } = useAuth();
@@ -90,6 +91,51 @@ const Index = () => {
               <p className="text-muted-foreground">
                 即時新聞資訊、全台天氣預報、天氣警報及颱風預報
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* New Games Section */}
+        <section className="py-16 bg-primary/5 rounded-xl p-8 my-8">
+          <h2 className="text-3xl font-bold text-center mb-12">享樂遊戲</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-card rounded-lg p-6 shadow-sm border">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Balloon className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">射氣球</h3>
+              <p className="text-muted-foreground">
+                測試您的準確度，射爆氣球贏取豐厚獎勵，越小的氣球獎勵越多
+              </p>
+              <Button variant="link" asChild className="mt-4 px-0">
+                <Link to="/dashboard">立即遊玩 →</Link>
+              </Button>
+            </div>
+            
+            <div className="bg-card rounded-lg p-6 shadow-sm border">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Target className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">射飛鏢</h3>
+              <p className="text-muted-foreground">
+                挑戰飛鏢遊戲，命中靶心獲得最高獎勵，考驗您的精準度
+              </p>
+              <Button variant="link" asChild className="mt-4 px-0">
+                <Link to="/dashboard">立即遊玩 →</Link>
+              </Button>
+            </div>
+            
+            <div className="bg-card rounded-lg p-6 shadow-sm border">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Star className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">許願池</h3>
+              <p className="text-muted-foreground">
+                提交您的願望和建議，管理員定期審核並實現優質想法
+              </p>
+              <Button variant="link" asChild className="mt-4 px-0">
+                <Link to="/dashboard">前往許願 →</Link>
+              </Button>
             </div>
           </div>
         </section>
