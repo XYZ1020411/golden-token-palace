@@ -1,44 +1,23 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/context/AdminContext";
-import { useVip } from "@/context/VipContext";
-import { useProduct } from "@/context/ProductContext";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  SidebarInset,
-  SidebarTrigger
-} from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Bell, 
-  Database, 
-  ArrowLeft, 
-  Thermometer, 
-  Settings, 
-  Gift,
-  ScanBarcode,
-  Target,
-  PartyPopper,
-  Star,
-  PanelLeftClose,
-  PanelLeftOpen
-} from "lucide-react";
-
 import { BackendStatsSection } from "@/components/backend/BackendStatsSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import MainLayout from "@/components/layout/MainLayout";
+import {
+  ArrowLeft,
+  Users,
+  FileText,
+  MessageSquare,
+  Settings,
+  ShoppingBag,
+  Menu,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { BackendUserManagement } from "@/components/backend/BackendUserManagement";
 import { BackendAnnouncementSection } from "@/components/backend/BackendAnnouncementSection";
 import { BackendAiSettings } from "@/components/backend/BackendAiSettings";
@@ -50,175 +29,252 @@ import { UserRole } from "@/context/AuthContext";
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
-  const { 
-    users, 
-    announcements, 
+  const navigate = useNavigate();
+
+  // Sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
+  // Use admin context
+  const {
+    users,
+    announcements,
     supportMessages,
-    currentTemperature,
     addUser,
-    deleteUser,
+    removeUser,
     updateUser,
     addAnnouncement,
-    deleteAnnouncement,
+    removeAnnouncement,
+    updateAnnouncement,
     respondToSupportMessage,
     markSupportMessageResolved,
-    getAiAssistantResponse,
-    backupData,
-    restoreData
+    generateSystemBackup,
+    restoreSystemBackup
   } = useAdmin();
-  
-  const { dailyUsageCode, lastCodeUpdateTime } = useProduct();
-  
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+
+  // Selected tab state
+  const [selectedTab, setSelectedTab] = useState("dashboard");
+
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "admin") {
       navigate("/login");
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
-  const handleReturn = () => {
-    navigate("/dashboard");
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const sections = [
-    { id: "dashboard", label: "儀表板", icon: LayoutDashboard },
-    { id: "users", label: "用戶管理", icon: Users },
-    { id: "announcements", label: "系統公告", icon: Bell },
-    { id: "redemption-codes", label: "兌換碼管理", icon: ScanBarcode },
-    { id: "wish-pool", label: "許願池管理", icon: Star },
-    { id: "games", label: "遊戲管理", icon: Target },
-    { id: "ai-settings", label: "AI設置", icon: Settings },
-    { id: "system", label: "系統設置", icon: Database }
-  ];
-  
-  const [activeSection, setActiveSection] = useState("dashboard");
+  if (!isAuthenticated || !user || user.role !== "admin") {
+    return null;
+  }
 
   return (
-    <SidebarProvider defaultOpen={sidebarOpen}>
-      <div className="flex h-screen w-full overflow-hidden bg-background">
-        <Sidebar>
-          <SidebarContent>
-            <div className="flex h-14 items-center border-b px-4 justify-between">
-              <h2 className="text-lg font-semibold">後台管理系統</h2>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="ml-auto" 
-                onClick={toggleSidebar}
+    <MainLayout>
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate("/admin")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">後台管理</h1>
+          </div>
+          <Button variant="outline" size="icon" onClick={toggleSidebar}>
+            {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <div className="flex gap-6">
+          {/* Sidebar Menu */}
+          <div className={`border rounded-lg ${isSidebarCollapsed ? "w-12" : "w-52"} transition-all duration-300`}>
+            <div className="p-2">
+              <Button
+                variant={selectedTab === "dashboard" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("dashboard")}
               >
-                {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                {isSidebarCollapsed ? (
+                  <Menu className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Menu className="h-4 w-4 mr-2" />
+                    儀表板
+                  </>
+                )}
               </Button>
-            </div>
-            <div className="flex-1 overflow-auto py-2">
-              <SidebarMenu>
-                {sections.map((section) => (
-                  <SidebarMenuItem key={section.id}>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveSection(section.id)}
-                      isActive={activeSection === section.id}
-                      tooltip={section.label}
-                    >
-                      <section.icon className="mr-2 h-4 w-4" />
-                      <span>{section.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </div>
-          </SidebarContent>
-          <SidebarFooter className="border-t p-4">
-            <div className="flex items-center gap-2">
-              <Thermometer className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">{currentTemperature}</span>
-            </div>
-            <div className="mt-4 flex gap-4">
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-1 w-full" 
-                onClick={handleReturn}
+              
+              <Button
+                variant={selectedTab === "users" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("users")}
               >
-                <ArrowLeft className="h-4 w-4" />
-                返回儀表板
+                {isSidebarCollapsed ? (
+                  <Users className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 mr-2" />
+                    用戶管理
+                  </>
+                )}
               </Button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        
-        <SidebarInset>
-          <div className="flex-1 overflow-auto p-6 pt-0">
-            <div className="mx-auto max-w-6xl">
-              <div className="py-4">
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {sections.find(s => s.id === activeSection)?.label}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  管理系統 {sections.find(s => s.id === activeSection)?.label}
-                </p>
-              </div>
               
-              {activeSection === "dashboard" && (
-                <BackendStatsSection 
-                  users={users || []} 
-                  announcements={announcements || []} 
-                  supportMessages={supportMessages || []}
-                />
-              )}
+              <Button
+                variant={selectedTab === "announcements" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("announcements")}
+              >
+                {isSidebarCollapsed ? (
+                  <FileText className="h-4 w-4" />
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    公告管理
+                  </>
+                )}
+              </Button>
               
-              {activeSection === "users" && (
-                <BackendUserManagement 
-                  users={users || []} 
-                  addUser={addUser}
-                  deleteUser={deleteUser}
-                  updateUser={updateUser}
-                />
-              )}
+              <Button
+                variant={selectedTab === "support" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("support")}
+              >
+                {isSidebarCollapsed ? (
+                  <MessageSquare className="h-4 w-4" />
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    客服訊息
+                  </>
+                )}
+              </Button>
               
-              {activeSection === "announcements" && (
-                <BackendAnnouncementSection 
-                  announcements={announcements || []}
-                  addAnnouncement={addAnnouncement}
-                  deleteAnnouncement={deleteAnnouncement}
-                />
-              )}
+              <Button
+                variant={selectedTab === "redemption" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("redemption")}
+              >
+                {isSidebarCollapsed ? (
+                  <ShoppingBag className="h-4 w-4" />
+                ) : (
+                  <>
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    兌換管理
+                  </>
+                )}
+              </Button>
               
-              {activeSection === "redemption-codes" && (
-                <RedemptionCodeManagement />
-              )}
+              <Button
+                variant={selectedTab === "games" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("games")}
+              >
+                {isSidebarCollapsed ? (
+                  <Settings className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    遊戲管理
+                  </>
+                )}
+              </Button>
               
-              {activeSection === "wish-pool" && (
-                <WishPoolManagement />
-              )}
+              <Button
+                variant={selectedTab === "ai" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("ai")}
+              >
+                {isSidebarCollapsed ? (
+                  <Settings className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    AI設定
+                  </>
+                )}
+              </Button>
               
-              {activeSection === "games" && (
-                <GameManagement />
-              )}
-              
-              {activeSection === "ai-settings" && (
-                <BackendAiSettings 
-                  supportMessages={supportMessages || []}
-                  respondToSupportMessage={respondToSupportMessage}
-                  markSupportMessageResolved={markSupportMessageResolved}
-                  getAiAssistantResponse={getAiAssistantResponse}
-                />
-              )}
-              
-              {activeSection === "system" && (
-                <BackendSystemSettings 
-                  backupData={backupData}
-                  restoreData={restoreData}
-                />
-              )}
+              <Button
+                variant={selectedTab === "system" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("system")}
+              >
+                {isSidebarCollapsed ? (
+                  <Settings className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    系統設定
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-        </SidebarInset>
+
+          {/* Main content area */}
+          <div className="flex-1">
+            {selectedTab === "dashboard" && (
+              <>
+                <h2 className="text-2xl font-bold mb-4">系統概況</h2>
+                <BackendStatsSection
+                  users={users}
+                  announcements={announcements}
+                  supportMessages={supportMessages}
+                />
+              </>
+            )}
+            
+            {selectedTab === "users" && (
+              <BackendUserManagement
+                users={users}
+                addUser={addUser as (username: string, password: string, role: UserRole) => Promise<boolean>}
+                removeUser={removeUser as (userId: string) => Promise<boolean>}
+                updateUser={updateUser as (userId: string, updates: any) => Promise<boolean>}
+              />
+            )}
+            
+            {selectedTab === "announcements" && (
+              <BackendAnnouncementSection
+                announcements={announcements}
+                addAnnouncement={addAnnouncement}
+                removeAnnouncement={removeAnnouncement as (id: string) => boolean}
+                updateAnnouncement={updateAnnouncement}
+              />
+            )}
+            
+            {selectedTab === "support" && (
+              <Tabs defaultValue="pending" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="pending">待處理訊息</TabsTrigger>
+                  <TabsTrigger value="resolved">已處理訊息</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pending">
+                  {/* Support messages management component will go here */}
+                  <p>待處理的客戶訊息列表...</p>
+                </TabsContent>
+                <TabsContent value="resolved">
+                  <p>已處理的客戶訊息歷史紀錄...</p>
+                </TabsContent>
+              </Tabs>
+            )}
+            
+            {selectedTab === "redemption" && <RedemptionCodeManagement />}
+            
+            {selectedTab === "games" && <GameManagement />}
+            
+            {selectedTab === "ai" && (
+              <BackendAiSettings 
+                respondToSupportMessage={respondToSupportMessage as (messageId: string, response: string) => boolean}
+                markSupportMessageResolved={markSupportMessageResolved as (messageId: string, resolved: boolean) => boolean}
+              />
+            )}
+            
+            {selectedTab === "system" && (
+              <BackendSystemSettings 
+                generateSystemBackup={generateSystemBackup as () => string}
+                restoreSystemBackup={restoreSystemBackup as (jsonData: string) => boolean}
+                wishPool={<WishPoolManagement />}
+              />
+            )}
+          </div>
+        </div>
       </div>
-    </SidebarProvider>
+    </MainLayout>
   );
 };
 
