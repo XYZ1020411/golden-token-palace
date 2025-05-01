@@ -1,70 +1,71 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
 import Wallet from "./pages/Wallet";
-import VipRewards from "./pages/VipRewards";
-import Weather from "./pages/Weather";
 import News from "./pages/News";
-import Admin from "./pages/Admin";
+import Weather from "./pages/Weather";
 import Profile from "./pages/Profile";
-import ScanBarcode from "./pages/ScanBarcode";
-import InboxPage from "./pages/Inbox";
+import Admin from "./pages/Admin";
 import BackendManagement from "./pages/BackendManagement";
+import Inbox from "./pages/Inbox";
+import VipRewards from "./pages/VipRewards";
+import ScanBarcode from "./pages/ScanBarcode";
+import BalloonGame from "./pages/BalloonGame";
+import DartGame from "./pages/DartGame";
 
 import { AuthProvider } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
-import { VipProvider } from "./context/VipContext";
-import { AdminProvider } from "./context/AdminContext";
-import { InfoServicesProvider } from "./context/InfoServicesContext";
 import { ProductProvider } from "./context/ProductContext";
+import { InfoServicesProvider } from "./context/InfoServicesContext";
+import { AdminProvider } from "./context/AdminContext";
+import { VipProvider } from "./context/VipContext";
 
-const queryClient = new QueryClient();
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import "./App.css";
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+// 保持現有的 App 組件代碼，僅添加新的路由
+function App() {
+  return (
+    <Router>
       <AuthProvider>
         <WalletProvider>
-          <VipProvider>
-            <AdminProvider>
-              <ProductProvider>
-                <InfoServicesProvider>
+          <ProductProvider>
+            <InfoServicesProvider>
+              <AdminProvider>
+                <VipProvider>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/wallet" element={<Wallet />} />
+                    <Route path="/news" element={<News />} />
+                    <Route path="/weather" element={<Weather />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/backend" element={<BackendManagement />} />
+                    <Route path="/inbox" element={<Inbox />} />
+                    <Route path="/vip" element={<VipRewards />} />
+                    <Route path="/scan" element={<ScanBarcode />} />
+                    <Route path="/balloon-game" element={<BalloonGame />} />
+                    <Route path="/dart-game" element={<DartGame />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                   <Toaster />
                   <Sonner />
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/vip" element={<VipRewards />} />
-                      <Route path="/weather" element={<Weather />} />
-                      <Route path="/news" element={<News />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/scan" element={<ScanBarcode />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/inbox" element={<InboxPage />} />
-                      <Route path="/backend" element={<BackendManagement />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </BrowserRouter>
-                </InfoServicesProvider>
-              </ProductProvider>
-            </AdminProvider>
-          </VipProvider>
+                </VipProvider>
+              </AdminProvider>
+            </InfoServicesProvider>
+          </ProductProvider>
         </WalletProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </Router>
+  );
+}
 
 export default App;

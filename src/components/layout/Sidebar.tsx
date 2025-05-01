@@ -15,7 +15,9 @@ import {
   LogOut,
   User,
   Inbox,
-  Terminal
+  Terminal,
+  Target,
+  PartyPopper
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,6 +92,16 @@ export function Sidebar() {
       label: "個人資料",
       href: "/profile",
     },
+    {
+      icon: PartyPopper,
+      label: "射氣球",
+      href: "/balloon-game",
+    },
+    {
+      icon: Target,
+      label: "射飛鏢",
+      href: "/dart-game",
+    },
   ];
 
   // Admin navigation items
@@ -118,6 +130,16 @@ export function Sidebar() {
         <Menu className="h-4 w-4" />
       </Button>
 
+      {/* Collapse/Expand button - visible on all screens */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed bottom-4 left-4 z-50"
+        onClick={handleCollapse}
+      >
+        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </Button>
+
       {/* Mobile overlay */}
       {toggled && isMobile && (
         <div
@@ -139,17 +161,6 @@ export function Sidebar() {
           {/* Sidebar Header */}
           <div className="flex h-16 items-center border-b px-4">
             {!collapsed && <span className="text-xl font-bold">系統選單</span>}
-            {/* Collapse button (desktop only) */}
-            {!isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("ml-auto", collapsed && "rotate-180")}
-                onClick={handleCollapse}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            )}
             {/* Close button (mobile only) */}
             {isMobile && toggled && (
               <Button
