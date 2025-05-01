@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -61,7 +60,7 @@ const BalloonGame = () => {
       // 增加交易記錄
       addTransaction({
         amount: userReward,
-        type: "game",
+        type: "system", // Changed from "game" to "system"
         description: "射氣球遊戲獎勵",
       });
       

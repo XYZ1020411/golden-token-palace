@@ -89,7 +89,7 @@ const DartGame = () => {
     // 增加交易記錄
     addTransaction({
       amount: userReward,
-      type: "game",
+      type: "system", // Changed from "game" to "system"
       description: `射飛鏢遊戲獎勵 (${hitZone})`,
     });
     
