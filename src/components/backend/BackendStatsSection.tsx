@@ -2,18 +2,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@/context/AuthContext";
 import { SystemAnnouncement, CustomerSupportMessage } from "@/context/AdminContext";
-import { Users, FileText, MessageSquare, ShoppingBag } from "lucide-react";
+import { Users, FileText, MessageSquare, Thermometer } from "lucide-react";
 
 interface BackendStatsSectionProps {
   users: User[];
   announcements: SystemAnnouncement[];
   supportMessages: CustomerSupportMessage[];
+  currentTemperature?: string; // Added currentTemperature as optional prop
 }
 
 export const BackendStatsSection = ({
   users,
   announcements,
-  supportMessages
+  supportMessages,
+  currentTemperature
 }: BackendStatsSectionProps) => {
   // Count unresolved support messages
   const unresolvedMessages = supportMessages.filter(msg => !msg.resolved).length;
@@ -22,7 +24,7 @@ export const BackendStatsSection = ({
   const vipUsers = users.filter(user => user.role === 'vip').length;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">總用戶數</CardTitle>
@@ -61,6 +63,22 @@ export const BackendStatsSection = ({
           </p>
         </CardContent>
       </Card>
+      
+      {/* Added temperature card */}
+      {currentTemperature && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">系統溫度</CardTitle>
+            <Thermometer className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{currentTemperature}</div>
+            <p className="text-xs text-muted-foreground">
+              伺服器即時監測
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
