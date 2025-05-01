@@ -8,22 +8,25 @@ import { Database, Save, Upload, Download, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
+import { ReactNode } from "react";
 
 interface BackendSystemSettingsProps {
-  backupData: () => string;
-  restoreData: (jsonData: string) => boolean;
+  backupData: () => string; // Changed from generateSystemBackup
+  restoreData: (jsonData: string) => boolean; // Changed from restoreSystemBackup
+  wishPool?: ReactNode; // Added optional wishPool prop
 }
 
 export const BackendSystemSettings = ({
-  backupData,
-  restoreData
+  backupData, // Changed from generateSystemBackup
+  restoreData, // Changed from restoreSystemBackup
+  wishPool
 }: BackendSystemSettingsProps) => {
   const [fileContent, setFileContent] = useState("");
   const [backupTimestamp, setBackupTimestamp] = useState<string | null>(null);
 
   const handleBackup = () => {
     try {
-      const data = backupData();
+      const data = backupData(); // Changed from generateSystemBackup
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -62,7 +65,7 @@ export const BackendSystemSettings = ({
     }
 
     try {
-      const success = restoreData(fileContent);
+      const success = restoreData(fileContent); // Changed from restoreSystemBackup
       if (success) {
         setFileContent("");
         toast({
@@ -180,6 +183,13 @@ export const BackendSystemSettings = ({
           </div>
         </CardContent>
       </Card>
+      
+      {/* Render the wishPool component if provided */}
+      {wishPool && (
+        <div className="mt-4">
+          {wishPool}
+        </div>
+      )}
     </div>
   );
 };

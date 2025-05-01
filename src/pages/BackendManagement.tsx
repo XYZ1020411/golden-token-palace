@@ -26,6 +26,7 @@ import { RedemptionCodeManagement } from "@/components/backend/RedemptionCodeMan
 import { WishPoolManagement } from "@/components/backend/WishPoolManagement";
 import { GameManagement } from "@/components/backend/GameManagement";
 import { UserRole } from "@/context/AuthContext";
+import { getAiAssistantResponse } from "@/services/aiAssistant";
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -41,15 +42,16 @@ const BackendManagement = () => {
     announcements,
     supportMessages,
     addUser,
-    removeUser,
+    deleteUser, // Renamed from removeUser to match AdminContext
     updateUser,
     addAnnouncement,
-    removeAnnouncement,
+    deleteAnnouncement, // Renamed from removeAnnouncement to match AdminContext
     updateAnnouncement,
     respondToSupportMessage,
     markSupportMessageResolved,
-    generateSystemBackup,
-    restoreSystemBackup
+    backupData, // Renamed from generateSystemBackup to match AdminContext
+    restoreData, // Renamed from restoreSystemBackup to match AdminContext
+    currentTemperature
   } = useAdmin();
 
   // Selected tab state
@@ -215,6 +217,7 @@ const BackendManagement = () => {
                   users={users}
                   announcements={announcements}
                   supportMessages={supportMessages}
+                  currentTemperature={currentTemperature}
                 />
               </>
             )}
@@ -222,9 +225,9 @@ const BackendManagement = () => {
             {selectedTab === "users" && (
               <BackendUserManagement
                 users={users}
-                addUser={addUser as (username: string, password: string, role: UserRole) => Promise<boolean>}
-                removeUser={removeUser as (userId: string) => Promise<boolean>}
-                updateUser={updateUser as (userId: string, updates: any) => Promise<boolean>}
+                addUser={addUser}
+                deleteUser={deleteUser} // Renamed from removeUser to match component props
+                updateUser={updateUser}
               />
             )}
             
@@ -232,7 +235,7 @@ const BackendManagement = () => {
               <BackendAnnouncementSection
                 announcements={announcements}
                 addAnnouncement={addAnnouncement}
-                removeAnnouncement={removeAnnouncement as (id: string) => boolean}
+                deleteAnnouncement={deleteAnnouncement} // Renamed from removeAnnouncement to match component props
                 updateAnnouncement={updateAnnouncement}
               />
             )}
@@ -259,15 +262,17 @@ const BackendManagement = () => {
             
             {selectedTab === "ai" && (
               <BackendAiSettings 
-                respondToSupportMessage={respondToSupportMessage as (messageId: string, response: string) => boolean}
-                markSupportMessageResolved={markSupportMessageResolved as (messageId: string, resolved: boolean) => boolean}
+                supportMessages={supportMessages}
+                respondToSupportMessage={respondToSupportMessage}
+                markSupportMessageResolved={markSupportMessageResolved}
+                getAiAssistantResponse={getAiAssistantResponse}
               />
             )}
             
             {selectedTab === "system" && (
               <BackendSystemSettings 
-                generateSystemBackup={generateSystemBackup as () => string}
-                restoreSystemBackup={restoreSystemBackup as (jsonData: string) => boolean}
+                backupData={backupData} // Renamed from generateSystemBackup to match component props
+                restoreData={restoreData} // Renamed from restoreSystemBackup to match component props
                 wishPool={<WishPoolManagement />}
               />
             )}

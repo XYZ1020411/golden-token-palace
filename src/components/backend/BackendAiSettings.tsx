@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomerSupportMessage } from "@/context/AdminContext";
-import { Bot, MessageCircle, AlertCircle, Search } from "lucide-react";
+import { Bot, MessageCircle, Search } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getAiAssistantResponse, AiAssistantResponse } from "@/services/aiAssistant";
@@ -27,10 +27,10 @@ export const BackendAiSettings = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const filteredMessages = supportMessages.filter(message =>
+  const filteredMessages = supportMessages?.filter(message =>
     message.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     message.message.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   const handleAiAssist = async (messageId: string, customerMessage: string) => {
     setIsLoading(true);
@@ -75,8 +75,8 @@ export const BackendAiSettings = ({
             />
           </div>
           <span className="ml-2 text-sm">
-            共 {supportMessages.length} 個訊息，
-            未解決: {supportMessages.filter(msg => !msg.resolved).length} 個
+            共 {supportMessages?.length || 0} 個訊息，
+            未解決: {supportMessages?.filter(msg => !msg.resolved).length || 0} 個
           </span>
         </CardDescription>
       </CardHeader>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,12 +14,14 @@ interface BackendAnnouncementSectionProps {
   announcements: SystemAnnouncement[];
   addAnnouncement: (announcement: Omit<SystemAnnouncement, "id" | "date">) => void;
   deleteAnnouncement: (id: string) => boolean;
+  updateAnnouncement: (id: string, updates: Partial<Omit<SystemAnnouncement, "id" | "date">>) => boolean;
 }
 
 export const BackendAnnouncementSection = ({
   announcements,
   addAnnouncement,
-  deleteAnnouncement
+  deleteAnnouncement,
+  updateAnnouncement
 }: BackendAnnouncementSectionProps) => {
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
