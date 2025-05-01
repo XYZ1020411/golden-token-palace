@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
@@ -17,6 +18,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { Separator } from "@/components/ui/separator";
 
 const BalloonGame = () => {
   const { user, isAuthenticated } = useAuth();
@@ -25,6 +27,10 @@ const BalloonGame = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [reward, setReward] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [balloons, setBalloons] = useState<{id: number, x: number, y: number, size: number, popped: boolean}[]>([]);
+  const [score, setScore] = useState(0);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+  const [timeLeft, setTimeLeft] = useState(10);
   const [gameStats, setGameStats] = useState({
     totalPlays: 0,
     totalRewards: 0,
@@ -42,6 +48,38 @@ const BalloonGame = () => {
     });
   }, []);
 
+  // Create balloons when game starts
+  useEffect(() => {
+    if (isPlaying && gameAreaRef.current) {
+      const width = gameAreaRef.current.offsetWidth;
+      const height = gameAreaRef.current.offsetHeight;
+      
+      const newBalloons = Array(8).fill(0).map((_, index) => ({
+        id: index,
+        x: Math.random() * (width - 60),
+        y: Math.random() * (height - 60),
+        size: 40 + Math.random() * 20,
+        popped: false
+      }));
+      
+      setBalloons(newBalloons);
+      
+      // Timer countdown
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            handleGameEnd();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [isPlaying]);
+
   if (!isAuthenticated) {
     navigate("/login");
     return null;
@@ -50,36 +88,53 @@ const BalloonGame = () => {
   const handleStartGame = () => {
     setIsPlaying(true);
     setShowResults(false);
+    setScore(0);
+    setTimeLeft(10);
+  };
+  
+  const handlePopBalloon = (id: number) => {
+    if (!isPlaying) return;
     
-    // 模擬遊戲進行
-    setTimeout(() => {
-      const baseReward = Math.floor(Math.random() * 9000) + 1000; // 1000 到 10000 之間的隨機數
-      const userReward = baseReward;
-      setReward(userReward);
-      
-      // 增加交易記錄
-      addTransaction({
-        amount: userReward,
-        type: "system", // Changed from "game" to "system"
-        description: "射氣球遊戲獎勵",
-      });
-      
-      // 更新遊戲統計
-      setGameStats(prev => ({
-        totalPlays: prev.totalPlays + 1,
-        totalRewards: prev.totalRewards + userReward,
-        averageReward: Math.floor((prev.totalRewards + userReward) / (prev.totalPlays + 1)),
-        highestReward: Math.max(prev.highestReward, userReward),
-      }));
-      
-      setIsPlaying(false);
-      setShowResults(true);
-      
-      toast({
-        title: "恭喜！",
-        description: `您獲得了 ${userReward.toLocaleString()} 點獎勵！`,
-      });
-    }, 2000);
+    setBalloons(prev => 
+      prev.map(balloon => 
+        balloon.id === id 
+          ? { ...balloon, popped: true } 
+          : balloon
+      )
+    );
+    
+    setScore(prev => prev + 100);
+  };
+  
+  const handleGameEnd = () => {
+    setIsPlaying(false);
+    
+    // Calculate reward based on score
+    const baseReward = Math.min(score, 800);
+    const userReward = baseReward * 10; // Convert score to points
+    setReward(userReward);
+    
+    // 增加交易記錄
+    addTransaction({
+      amount: userReward,
+      type: "system", // Changed from "game" to "system"
+      description: "射氣球遊戲獎勵",
+    });
+    
+    // 更新遊戲統計
+    setGameStats(prev => ({
+      totalPlays: prev.totalPlays + 1,
+      totalRewards: prev.totalRewards + userReward,
+      averageReward: Math.floor((prev.totalRewards + userReward) / (prev.totalPlays + 1)),
+      highestReward: Math.max(prev.highestReward, userReward),
+    }));
+    
+    setShowResults(true);
+    
+    toast({
+      title: "遊戲結束！",
+      description: `您獲得了 ${userReward.toLocaleString()} 點獎勵！`,
+    });
   };
 
   return (
@@ -102,39 +157,75 @@ const BalloonGame = () => {
                 射氣球遊戲
               </CardTitle>
               <CardDescription>
-                射擊氣球獲得隨機獎勵，最高可得 10,000 點！
+                射擊氣球獲得獎勵，分數越高獎勵越多！
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="aspect-video rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-4">
-                {isPlaying ? (
-                  <div className="text-center text-white">
-                    <div className="animate-bounce mb-2">
-                      <PartyPopper className="h-12 w-12 mx-auto" />
-                    </div>
-                    <p className="text-xl font-bold">射擊中...</p>
-                  </div>
-                ) : showResults ? (
-                  <div className="text-center text-white">
-                    <h3 className="text-2xl font-bold mb-2">恭喜！</h3>
-                    <p className="text-3xl font-bold">獲得 {reward.toLocaleString()} 點</p>
-                  </div>
-                ) : (
-                  <div className="text-center text-white">
+              {!isPlaying && !showResults ? (
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-center mb-6">
                     <PartyPopper className="h-12 w-12 mx-auto mb-2" />
-                    <p className="text-xl font-bold">準備開始!</p>
+                    <p className="text-xl font-bold">準備好射氣球了嗎？</p>
+                    <p className="text-sm text-muted-foreground mt-2">點擊氣球獲得分數！</p>
                   </div>
-                )}
-              </div>
-              
-              <Button 
-                className="w-full" 
-                size="lg" 
-                disabled={isPlaying}
-                onClick={handleStartGame}
-              >
-                {isPlaying ? "遊戲進行中..." : "開始射擊"}
-              </Button>
+                  
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={handleStartGame}
+                  >
+                    開始遊戲
+                  </Button>
+                </div>
+              ) : isPlaying ? (
+                <div className="flex flex-col">
+                  <div className="flex justify-between mb-2">
+                    <div className="text-lg font-bold">分數: {score}</div>
+                    <div className="text-lg font-bold">時間: {timeLeft}秒</div>
+                  </div>
+                  <div 
+                    ref={gameAreaRef} 
+                    className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg relative overflow-hidden"
+                    style={{ touchAction: "none" }}
+                  >
+                    {balloons.map(balloon => (
+                      !balloon.popped && (
+                        <div
+                          key={balloon.id}
+                          className="absolute cursor-pointer transition-transform"
+                          style={{
+                            left: `${balloon.x}px`,
+                            top: `${balloon.y}px`,
+                            width: `${balloon.size}px`,
+                            height: `${balloon.size}px`,
+                          }}
+                          onClick={() => handlePopBalloon(balloon.id)}
+                        >
+                          <div className="w-full h-full bg-red-500 rounded-full flex items-center justify-center animate-bounce">
+                            <span className="text-white font-bold">
+                              {100}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-4">
+                  <h3 className="text-2xl font-bold mb-2">遊戲結束！</h3>
+                  <p className="text-lg mb-4">您的分數: <span className="font-bold">{score}</span></p>
+                  <p className="text-3xl font-bold mb-6">獲得 {reward.toLocaleString()} 點</p>
+                  
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={handleStartGame}
+                  >
+                    再玩一次
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
           
@@ -175,11 +266,12 @@ const BalloonGame = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p>射氣球是一個簡單且有趣的小遊戲，您可以通過它獲得隨機點數獎勵：</p>
+              <p>射氣球是一個簡單且有趣的小遊戲，您可以通過它獲得點數獎勵：</p>
               <ol className="list-decimal list-inside space-y-2">
-                <li>點擊「開始射擊」按鈕開始遊戲</li>
-                <li>系統將隨機決定您的射擊結果</li>
-                <li>每次射擊可獲得 1,000 到 10,000 不等的點數獎勵</li>
+                <li>點擊「開始遊戲」按鈕開始遊戲</li>
+                <li>在限定的時間內點擊氣球使其爆炸</li>
+                <li>每個氣球價值 100 點分數</li>
+                <li>遊戲結束時，分數將轉換為獎勵點數</li>
                 <li>獎勵點數將自動添加到您的帳戶中</li>
               </ol>
             </div>
@@ -197,7 +289,8 @@ const BalloonGame = () => {
                 <div className="p-4 space-y-4">
                   <p>射氣球遊戲的獎勵基於以下機制：</p>
                   <ul className="list-disc list-inside space-y-2">
-                    <li>基本獎勵範圍：1,000 - 10,000 點</li>
+                    <li>基本獎勵：每100分換算為1000點獎勵</li>
+                    <li>最高獎勵：8000分可獲得80000點獎勵</li>
                     <li>VIP會員可享受獎勵加成：
                       <ul className="list-inside pl-4 space-y-1">
                         <li>VIP 1級：基本獎勵</li>
