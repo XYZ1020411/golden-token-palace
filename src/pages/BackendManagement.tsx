@@ -46,8 +46,7 @@ import { BackendSystemSettings } from "@/components/backend/BackendSystemSetting
 import { RedemptionCodeManagement } from "@/components/backend/RedemptionCodeManagement";
 import { WishPoolManagement } from "@/components/backend/WishPoolManagement";
 import { GameManagement } from "@/components/backend/GameManagement";
-import { UserRole } from "@/integrations/supabase/types";
-import { AiAssistantResponse } from "@/services/aiAssistant";
+import { UserRole } from "@/context/AuthContext";
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
