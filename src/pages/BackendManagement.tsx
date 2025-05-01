@@ -42,15 +42,15 @@ const BackendManagement = () => {
     announcements,
     supportMessages,
     addUser,
-    deleteUser, // Renamed from removeUser to match AdminContext
+    deleteUser, // Changed from removeUser to match AdminContext
     updateUser,
     addAnnouncement,
-    deleteAnnouncement, // Renamed from removeAnnouncement to match AdminContext
+    deleteAnnouncement, // Changed from removeAnnouncement to match AdminContext
     updateAnnouncement,
     respondToSupportMessage,
     markSupportMessageResolved,
-    backupData, // Renamed from generateSystemBackup to match AdminContext
-    restoreData, // Renamed from restoreSystemBackup to match AdminContext
+    backupData, // Changed from generateSystemBackup to match AdminContext
+    restoreData, // Changed from restoreSystemBackup to match AdminContext
     currentTemperature
   } = useAdmin();
 
@@ -226,7 +226,7 @@ const BackendManagement = () => {
               <BackendUserManagement
                 users={users}
                 addUser={addUser}
-                deleteUser={deleteUser} // Renamed from removeUser to match component props
+                deleteUser={deleteUser} // Changed from removeUser to deleteUser
                 updateUser={updateUser}
               />
             )}
@@ -235,7 +235,7 @@ const BackendManagement = () => {
               <BackendAnnouncementSection
                 announcements={announcements}
                 addAnnouncement={addAnnouncement}
-                deleteAnnouncement={deleteAnnouncement} // Renamed from removeAnnouncement to match component props
+                deleteAnnouncement={deleteAnnouncement} // Changed from removeAnnouncement to deleteAnnouncement
                 updateAnnouncement={updateAnnouncement}
               />
             )}
@@ -271,8 +271,8 @@ const BackendManagement = () => {
             
             {selectedTab === "system" && (
               <BackendSystemSettings 
-                backupData={backupData} // Renamed from generateSystemBackup to match component props
-                restoreData={restoreData} // Renamed from restoreSystemBackup to match component props
+                backupData={backupData} // Changed from generateSystemBackup to backupData
+                restoreData={restoreData} // Changed from restoreSystemBackup to restoreData
                 wishPool={<WishPoolManagement />}
               />
             )}
