@@ -13,7 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
-  SidebarInset
+  SidebarInset,
+  SidebarTrigger
 } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +33,9 @@ import {
   ScanBarcode,
   Target,
   PartyPopper,
-  Star
+  Star,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 
 import { BackendStatsSection } from "@/components/backend/BackendStatsSection";
@@ -43,6 +46,8 @@ import { BackendSystemSettings } from "@/components/backend/BackendSystemSetting
 import { RedemptionCodeManagement } from "@/components/backend/RedemptionCodeManagement";
 import { WishPoolManagement } from "@/components/backend/WishPoolManagement";
 import { GameManagement } from "@/components/backend/GameManagement";
+import { UserRole } from "@/integrations/supabase/types";
+import { AiAssistantResponse } from "@/services/aiAssistant";
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -51,12 +56,22 @@ const BackendManagement = () => {
     announcements, 
     supportMessages,
     currentTemperature,
-    products
+    addUser,
+    deleteUser,
+    updateUser,
+    addAnnouncement,
+    deleteAnnouncement,
+    respondToSupportMessage,
+    markSupportMessageResolved,
+    getAiAssistantResponse,
+    backupData,
+    restoreData
   } = useAdmin();
   
   const { dailyUsageCode, lastCodeUpdateTime } = useProduct();
   
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "admin") {
@@ -66,6 +81,10 @@ const BackendManagement = () => {
 
   const handleReturn = () => {
     navigate("/dashboard");
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   const sections = [
@@ -81,81 +100,21 @@ const BackendManagement = () => {
   
   const [activeSection, setActiveSection] = useState("dashboard");
 
-  // Create dummy handler functions to pass to components
-  const addUser = (user) => {
-    toast({
-      title: "Added user",
-      description: `User ${user.name} has been added`
-    });
-  };
-  
-  const deleteUser = (userId) => {
-    toast({
-      title: "Deleted user",
-      description: `User has been deleted`
-    });
-  };
-  
-  const updateUser = (user) => {
-    toast({
-      title: "Updated user",
-      description: `User ${user.name} has been updated`
-    });
-  };
-  
-  const addAnnouncement = (announcement) => {
-    toast({
-      title: "Added announcement",
-      description: `Announcement has been added`
-    });
-  };
-  
-  const deleteAnnouncement = (announcementId) => {
-    toast({
-      title: "Deleted announcement",
-      description: `Announcement has been deleted`
-    });
-  };
-  
-  const respondToSupportMessage = (messageId, response) => {
-    toast({
-      title: "Responded to message",
-      description: `Response has been sent`
-    });
-  };
-  
-  const markSupportMessageResolved = (messageId) => {
-    toast({
-      title: "Marked as resolved",
-      description: `Message has been marked as resolved`
-    });
-  };
-  
-  const getAiAssistantResponse = (message) => {
-    return Promise.resolve("AI response");
-  };
-  
-  const backupData = () => {
-    toast({
-      title: "Backup started",
-      description: `System data backup has started`
-    });
-  };
-  
-  const restoreData = (backupId) => {
-    toast({
-      title: "Restore started",
-      description: `System data restore has started`
-    });
-  };
-
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={sidebarOpen}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <Sidebar>
           <SidebarContent>
-            <div className="flex h-14 items-center border-b px-4">
+            <div className="flex h-14 items-center border-b px-4 justify-between">
               <h2 className="text-lg font-semibold">後台管理系統</h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="ml-auto" 
+                onClick={toggleSidebar}
+              >
+                {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              </Button>
             </div>
             <div className="flex-1 overflow-auto py-2">
               <SidebarMenu>
@@ -206,10 +165,9 @@ const BackendManagement = () => {
               
               {activeSection === "dashboard" && (
                 <BackendStatsSection 
-                  users={users} 
-                  announcements={announcements} 
-                  supportMessages={supportMessages}
-                  products={products || []}
+                  users={users || []} 
+                  announcements={announcements || []} 
+                  supportMessages={supportMessages || []}
                 />
               )}
               
