@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/components/ui/use-toast";
-import { Balloon, Target, RefreshCw } from "lucide-react";
+import { PartyPopper, Target, RefreshCw } from "lucide-react";
 
 export const GameManagement = () => {
   // Balloon Game Settings
@@ -52,7 +52,7 @@ export const GameManagement = () => {
       <Tabs defaultValue="balloon">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="balloon" className="flex items-center gap-2">
-            <Balloon className="h-4 w-4" />
+            <PartyPopper className="h-4 w-4" />
             射氣球遊戲
           </TabsTrigger>
           <TabsTrigger value="dart" className="flex items-center gap-2">

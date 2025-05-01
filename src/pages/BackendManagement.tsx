@@ -31,7 +31,7 @@ import {
   Gift,
   ScanBarcode,
   Target,
-  Balloon,
+  PartyPopper,
   Star
 } from "lucide-react";
 
@@ -51,6 +51,7 @@ const BackendManagement = () => {
     announcements, 
     supportMessages,
     currentTemperature,
+    products
   } = useAdmin();
   
   const { dailyUsageCode, lastCodeUpdateTime } = useProduct();
@@ -79,6 +80,74 @@ const BackendManagement = () => {
   ];
   
   const [activeSection, setActiveSection] = useState("dashboard");
+
+  // Create dummy handler functions to pass to components
+  const addUser = (user) => {
+    toast({
+      title: "Added user",
+      description: `User ${user.name} has been added`
+    });
+  };
+  
+  const deleteUser = (userId) => {
+    toast({
+      title: "Deleted user",
+      description: `User has been deleted`
+    });
+  };
+  
+  const updateUser = (user) => {
+    toast({
+      title: "Updated user",
+      description: `User ${user.name} has been updated`
+    });
+  };
+  
+  const addAnnouncement = (announcement) => {
+    toast({
+      title: "Added announcement",
+      description: `Announcement has been added`
+    });
+  };
+  
+  const deleteAnnouncement = (announcementId) => {
+    toast({
+      title: "Deleted announcement",
+      description: `Announcement has been deleted`
+    });
+  };
+  
+  const respondToSupportMessage = (messageId, response) => {
+    toast({
+      title: "Responded to message",
+      description: `Response has been sent`
+    });
+  };
+  
+  const markSupportMessageResolved = (messageId) => {
+    toast({
+      title: "Marked as resolved",
+      description: `Message has been marked as resolved`
+    });
+  };
+  
+  const getAiAssistantResponse = (message) => {
+    return Promise.resolve("AI response");
+  };
+  
+  const backupData = () => {
+    toast({
+      title: "Backup started",
+      description: `System data backup has started`
+    });
+  };
+  
+  const restoreData = (backupId) => {
+    toast({
+      title: "Restore started",
+      description: `System data restore has started`
+    });
+  };
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -140,15 +209,25 @@ const BackendManagement = () => {
                   users={users} 
                   announcements={announcements} 
                   supportMessages={supportMessages}
+                  products={products || []}
                 />
               )}
               
               {activeSection === "users" && (
-                <BackendUserManagement />
+                <BackendUserManagement 
+                  users={users || []} 
+                  addUser={addUser}
+                  deleteUser={deleteUser}
+                  updateUser={updateUser}
+                />
               )}
               
               {activeSection === "announcements" && (
-                <BackendAnnouncementSection />
+                <BackendAnnouncementSection 
+                  announcements={announcements || []}
+                  addAnnouncement={addAnnouncement}
+                  deleteAnnouncement={deleteAnnouncement}
+                />
               )}
               
               {activeSection === "redemption-codes" && (
@@ -164,11 +243,19 @@ const BackendManagement = () => {
               )}
               
               {activeSection === "ai-settings" && (
-                <BackendAiSettings />
+                <BackendAiSettings 
+                  supportMessages={supportMessages || []}
+                  respondToSupportMessage={respondToSupportMessage}
+                  markSupportMessageResolved={markSupportMessageResolved}
+                  getAiAssistantResponse={getAiAssistantResponse}
+                />
               )}
               
               {activeSection === "system" && (
-                <BackendSystemSettings />
+                <BackendSystemSettings 
+                  backupData={backupData}
+                  restoreData={restoreData}
+                />
               )}
             </div>
           </div>

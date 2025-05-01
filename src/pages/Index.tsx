@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { Gift, Users, CreditCard, CloudSun, Database, Target, Star, Balloon } from "lucide-react";
+import { Gift, Users, CreditCard, CloudSun, Database, Target, Star, PartyPopper } from "lucide-react";
 
 const Index = () => {
   const { isAuthenticated, user } = useAuth();
@@ -101,7 +101,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-card rounded-lg p-6 shadow-sm border">
               <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                <Balloon className="h-6 w-6 text-primary" />
+                <PartyPopper className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-2">射氣球</h3>
               <p className="text-muted-foreground">
