@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, MessageCircle } from "lucide-react";
+import { Bot, Send, MessageCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAiChat } from "@/hooks/useAiChat";
 import { AiChatMessage } from "./AiChatMessage";
@@ -46,7 +47,7 @@ export const AiCustomerService = () => {
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg z-50"
+        className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg z-50 bg-primary hover:bg-primary/90"
         size="icon"
         aria-label="開啟AI客服"
       >
@@ -78,7 +79,7 @@ export const AiCustomerService = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSend()}
-                placeholder="輸入您的問題..."
+                placeholder="例如: 如何查看我的訂單？如何兌換禮包碼？"
                 className="flex-1"
                 aria-label="問題輸入"
                 disabled={isLoading}
@@ -89,7 +90,11 @@ export const AiCustomerService = () => {
                 aria-label="發送訊息"
                 disabled={isLoading}
               >
-                <Send className={`h-4 w-4 ${isLoading ? "animate-pulse" : ""}`} />
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </DialogFooter>
