@@ -7,7 +7,7 @@ import { useInfoServices } from "@/context/InfoServicesContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
-import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell } from "lucide-react";
+import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell, BookOpen } from "lucide-react";
 import { CouponRedemption } from "@/components/product/CouponRedemption";
 import { AnnouncementBoard } from "@/components/announcement/AnnouncementBoard";
 import { AiCustomerService } from "@/components/customer-service/AiCustomerService";
@@ -233,7 +233,7 @@ const Dashboard = () => {
         )}
 
         {/* Quick action buttons */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
           <Button variant="outline" onClick={() => navigate("/wallet")}>
             <CreditCard className="mr-2 h-4 w-4" />
             查看錢包
@@ -254,6 +254,15 @@ const Dashboard = () => {
           <Button variant="outline" onClick={() => navigate("/profile")}>
             <User className="mr-2 h-4 w-4" />
             個人資料
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-800"
+            onClick={() => navigate("/daily-novel")}
+          >
+            <BookOpen className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
+            每日小說
           </Button>
         </div>
       </div>

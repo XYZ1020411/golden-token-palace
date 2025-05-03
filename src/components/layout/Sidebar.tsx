@@ -17,7 +17,8 @@ import {
   Inbox,
   Terminal,
   Target,
-  PartyPopper
+  PartyPopper,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -91,6 +92,11 @@ export function Sidebar() {
       icon: User,
       label: "個人資料",
       href: "/profile",
+    },
+    {
+      icon: BookOpen,
+      label: "每日小說",
+      href: "/daily-novel",
     },
     {
       icon: PartyPopper,
