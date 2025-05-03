@@ -17,6 +17,8 @@ export const getAiAssistantResponse = async (
     
     while (attempts < maxAttempts) {
       try {
+        console.log(`正在嘗試獲取AI回應 (嘗試 ${attempts + 1}/${maxAttempts})`);
+        
         const { data, error } = await supabase.functions.invoke('ai-customer-service', {
           body: { customerMessage },
           headers: {
@@ -33,6 +35,7 @@ export const getAiAssistantResponse = async (
           throw new Error('無效的 AI 回應數據');
         }
 
+        console.log('AI 回應成功獲取');
         return {
           content: data.response,
           status: 'success'

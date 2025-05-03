@@ -37,7 +37,7 @@ export const AiCustomerService = () => {
   }, [messages]);
 
   const handleSend = () => {
-    if (input.trim()) {
+    if (input.trim() && !isLoading) {
       sendMessage(input);
       setInput("");
     }
@@ -78,7 +78,7 @@ export const AiCustomerService = () => {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSend()}
+                onKeyDown={e => e.key === "Enter" && !isLoading && handleSend()}
                 placeholder="例如: 如何查看我的訂單？如何兌換禮包碼？"
                 className="flex-1"
                 aria-label="問題輸入"
@@ -87,8 +87,8 @@ export const AiCustomerService = () => {
               <Button
                 size="icon"
                 onClick={handleSend}
-                aria-label="發送訊息"
                 disabled={isLoading}
+                aria-label="發送訊息"
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

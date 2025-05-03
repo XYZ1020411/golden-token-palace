@@ -29,6 +29,7 @@ import { VipProvider } from "./context/VipContext";
 
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { AiCustomerService } from "./components/customer-service/AiCustomerService";
 import "./App.css";
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
                     <Route path="/gift-code" element={<GiftCode />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  <AiCustomerService />
                   <Toaster />
                   <Sonner />
                 </VipProvider>

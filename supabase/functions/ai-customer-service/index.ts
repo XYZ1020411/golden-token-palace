@@ -43,7 +43,7 @@ serve(async (req) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o-mini', // 更新到最新模型
             messages: [
               {
                 role: 'system',
@@ -62,13 +62,14 @@ serve(async (req) => {
           })
         });
         
-        if (response.ok) {
+        if (response.status === 200) {
           const contentType = response.headers.get('content-type');
           if (!contentType || !contentType.includes('application/json')) {
             throw new Error(`非預期的回應格式: ${contentType}`);
           }
           
           success = true;
+          console.log("成功收到 OpenAI API 的回應");
         } else {
           attempts++;
           const errorText = await response.text();
@@ -95,7 +96,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("OpenAI API 回應成功");
+    console.log("OpenAI API 回應成功解析");
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       throw new Error('無效的 OpenAI API 回應格式');
@@ -105,15 +106,15 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       response: '抱歉，AI 助手暫時無法使用。請稍後再試。'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
-})
+});
