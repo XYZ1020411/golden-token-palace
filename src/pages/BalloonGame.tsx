@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -27,10 +26,11 @@ const BalloonGame = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [reward, setReward] = useState(0);
   const [showResults, setShowResults] = useState(false);
-  const [balloons, setBalloons] = useState<{id: number, x: number, y: number, size: number, popped: boolean}[]>([]);
+  const [balloons, setBalloons] = useState<{id: number, x: number, y: number, size: number, popped: boolean, value: number}[]>([]);
   const [score, setScore] = useState(0);
   const gameAreaRef = useRef<HTMLDivElement>(null);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const balloonGeneratorRef = useRef<NodeJS.Timeout | null>(null);
   const [gameStats, setGameStats] = useState({
     totalPlays: 0,
     totalRewards: 0,
@@ -48,27 +48,44 @@ const BalloonGame = () => {
     });
   }, []);
 
-  // Create balloons when game starts
+  // Create balloons when game starts and continuously generate new ones
   useEffect(() => {
     if (isPlaying && gameAreaRef.current) {
       const width = gameAreaRef.current.offsetWidth;
       const height = gameAreaRef.current.offsetHeight;
       
-      const newBalloons = Array(8).fill(0).map((_, index) => ({
-        id: index,
-        x: Math.random() * (width - 60),
-        y: Math.random() * (height - 60),
-        size: 40 + Math.random() * 20,
-        popped: false
-      }));
-      
+      // Initial balloons
+      const newBalloons = Array(5).fill(0).map((_, index) => createBalloon(index, width, height));
       setBalloons(newBalloons);
+      
+      // Continuously generate new balloons
+      balloonGeneratorRef.current = setInterval(() => {
+        if (gameAreaRef.current) {
+          const currentWidth = gameAreaRef.current.offsetWidth;
+          const currentHeight = gameAreaRef.current.offsetHeight;
+          
+          setBalloons(prev => {
+            // Filter out popped balloons and keep only 12 active balloons max
+            const activeBalloonsCount = prev.filter(b => !b.popped).length;
+            if (activeBalloonsCount >= 12) return prev;
+            
+            // Create a new balloon with a unique ID
+            const newId = prev.length > 0 ? Math.max(...prev.map(b => b.id)) + 1 : 0;
+            const newBalloon = createBalloon(newId, currentWidth, currentHeight);
+            return [...prev, newBalloon];
+          });
+        }
+      }, 1000); // Add a new balloon every second
       
       // Timer countdown
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(timer);
+            if (balloonGeneratorRef.current) {
+              clearInterval(balloonGeneratorRef.current);
+              balloonGeneratorRef.current = null;
+            }
             handleGameEnd();
             return 0;
           }
@@ -76,9 +93,30 @@ const BalloonGame = () => {
         });
       }, 1000);
       
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+        if (balloonGeneratorRef.current) {
+          clearInterval(balloonGeneratorRef.current);
+          balloonGeneratorRef.current = null;
+        }
+      };
     }
   }, [isPlaying]);
+
+  // Helper function to create a balloon
+  const createBalloon = (id: number, width: number, height: number) => {
+    const size = 40 + Math.random() * 30;
+    const value = Math.floor(size / 10) * 20; // Smaller balloons are worth more points
+    
+    return {
+      id,
+      x: Math.random() * (width - size),
+      y: Math.random() * (height - size),
+      size,
+      popped: false,
+      value
+    };
+  };
 
   if (!isAuthenticated) {
     navigate("/login");
@@ -89,10 +127,10 @@ const BalloonGame = () => {
     setIsPlaying(true);
     setShowResults(false);
     setScore(0);
-    setTimeLeft(10);
+    setTimeLeft(15);
   };
   
-  const handlePopBalloon = (id: number) => {
+  const handlePopBalloon = (id: number, value: number) => {
     if (!isPlaying) return;
     
     setBalloons(prev => 
@@ -103,21 +141,20 @@ const BalloonGame = () => {
       )
     );
     
-    setScore(prev => prev + 100);
+    setScore(prev => prev + value);
   };
   
   const handleGameEnd = () => {
     setIsPlaying(false);
     
     // Calculate reward based on score
-    const baseReward = Math.min(score, 800);
-    const userReward = baseReward * 10; // Convert score to points
+    const userReward = Math.min(score * 10, 10000); // Maximum reward cap
     setReward(userReward);
     
     // 增加交易記錄
     addTransaction({
       amount: userReward,
-      type: "system", // Changed from "game" to "system"
+      type: "system",
       description: "射氣球遊戲獎勵",
     });
     
@@ -192,18 +229,24 @@ const BalloonGame = () => {
                       !balloon.popped && (
                         <div
                           key={balloon.id}
-                          className="absolute cursor-pointer transition-transform"
+                          className="absolute cursor-pointer transition-transform hover:scale-105"
                           style={{
                             left: `${balloon.x}px`,
                             top: `${balloon.y}px`,
                             width: `${balloon.size}px`,
                             height: `${balloon.size}px`,
                           }}
-                          onClick={() => handlePopBalloon(balloon.id)}
+                          onClick={() => handlePopBalloon(balloon.id, balloon.value)}
                         >
-                          <div className="w-full h-full bg-red-500 rounded-full flex items-center justify-center animate-bounce">
-                            <span className="text-white font-bold">
-                              {100}
+                          <div className="w-full h-full rounded-full flex items-center justify-center animate-bounce"
+                               style={{
+                                 background: `radial-gradient(circle at 30% 30%, 
+                                              rgb(255, ${50 + balloon.value}, ${50 + balloon.value}), 
+                                              rgb(180, 0, 0))`,
+                                 boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)'
+                               }}>
+                            <span className="text-white font-bold" style={{ fontSize: `${balloon.size / 3}px` }}>
+                              {balloon.value}
                             </span>
                           </div>
                         </div>
@@ -269,10 +312,11 @@ const BalloonGame = () => {
               <p>射氣球是一個簡單且有趣的小遊戲，您可以通過它獲得點數獎勵：</p>
               <ol className="list-decimal list-inside space-y-2">
                 <li>點擊「開始遊戲」按鈕開始遊戲</li>
-                <li>在限定的時間內點擊氣球使其爆炸</li>
-                <li>每個氣球價值 100 點分數</li>
-                <li>遊戲結束時，分數將轉換為獎勵點數</li>
-                <li>獎勵點數將自動添加到您的帳戶中</li>
+                <li>在15秒時間內點擊氣球使其爆炸</li>
+                <li>不同大小的氣球有不同分數值</li>
+                <li>小氣球比大氣球值更多分數</li>
+                <li>分數將轉換為獎勵點數，最高10,000點</li>
+                <li>氣球會不斷生成，越多越好！</li>
               </ol>
             </div>
           </CardContent>

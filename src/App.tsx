@@ -16,6 +16,8 @@ import VipRewards from "./pages/VipRewards";
 import ScanBarcode from "./pages/ScanBarcode";
 import BalloonGame from "./pages/BalloonGame";
 import DartGame from "./pages/DartGame";
+import NovelSystem from "./pages/NovelSystem";
+import GiftCode from "./pages/GiftCode";
 
 import { AuthProvider } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
@@ -28,7 +30,6 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import "./App.css";
 
-// 保持現有的 App 組件代碼，僅添加新的路由
 function App() {
   return (
     <Router>
@@ -54,6 +55,8 @@ function App() {
                     <Route path="/scan" element={<ScanBarcode />} />
                     <Route path="/balloon-game" element={<BalloonGame />} />
                     <Route path="/dart-game" element={<DartGame />} />
+                    <Route path="/novels" element={<NovelSystem />} />
+                    <Route path="/gift-code" element={<GiftCode />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster />

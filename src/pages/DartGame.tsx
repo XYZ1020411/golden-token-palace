@@ -18,11 +18,18 @@ const DartGame = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [targetPosition, setTargetPosition] = useState(50);
+  const [targetWidth, setTargetWidth] = useState(10); // Target width (percentage of total width)
+  const [middleZoneWidth, setMiddleZoneWidth] = useState(30); // Middle zone width (percentage)
   const [playerPosition, setPlayerPosition] = useState(0);
   const [aimPosition, setAimPosition] = useState(0);
   const [reward, setReward] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [difficulty, setDifficulty] = useState(1); // 1-5, higher = harder
+  const [movingTarget, setMovingTarget] = useState(false);
+  const [targetDirection, setTargetDirection] = useState(1); // 1 = right, -1 = left
+  const [targetSpeed, setTargetSpeed] = useState(0.5); // Speed of target movement
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  const targetMovementRef = useRef<NodeJS.Timeout | null>(null);
   const [gameStats, setGameStats] = useState({
     totalPlays: 0,
     totalRewards: 0,
@@ -40,6 +47,35 @@ const DartGame = () => {
     });
   }, []);
 
+  // Effect for moving target when game is in hard mode
+  useEffect(() => {
+    if (isPlaying && movingTarget) {
+      // Start target movement
+      targetMovementRef.current = setInterval(() => {
+        setTargetPosition(current => {
+          // Calculate new position
+          const newPosition = current + (targetDirection * targetSpeed);
+          
+          // Reverse direction if hitting boundaries
+          if (newPosition <= 15 || newPosition >= 85) {
+            setTargetDirection(dir => -dir);
+            return current; // Return current position this frame
+          }
+          
+          return newPosition;
+        });
+      }, 16); // Update at 60fps
+      
+      // Cleanup function
+      return () => {
+        if (targetMovementRef.current) {
+          clearInterval(targetMovementRef.current);
+          targetMovementRef.current = null;
+        }
+      };
+    }
+  }, [isPlaying, movingTarget, targetDirection, targetSpeed]);
+
   if (!isAuthenticated) {
     navigate("/login");
     return null;
@@ -50,6 +86,18 @@ const DartGame = () => {
     setShowResults(false);
     setPlayerPosition(0);
     setAimPosition(50);
+    
+    // Set difficulty based on previous play count
+    const newDifficulty = Math.min(5, Math.floor(gameStats.totalPlays / 100) + 1);
+    setDifficulty(newDifficulty);
+    
+    // Adjust target width based on difficulty
+    setTargetWidth(Math.max(4, 10 - (newDifficulty - 1) * 1.2));
+    setMiddleZoneWidth(Math.max(10, 30 - (newDifficulty - 1) * 4));
+    
+    // Set moving target for difficulty 3+
+    setMovingTarget(newDifficulty >= 3);
+    setTargetSpeed(0.5 + ((newDifficulty - 3) * 0.3));
     
     // 隨機設置目標位置
     const newTargetPosition = Math.floor(Math.random() * 70) + 15; // 15-85之間的隨機位置
@@ -91,16 +139,25 @@ const DartGame = () => {
   };
 
   const handleGameEnd = (finalPosition: number) => {
+    // Stop the target movement
+    if (targetMovementRef.current) {
+      clearInterval(targetMovementRef.current);
+      targetMovementRef.current = null;
+    }
+    
     // 計算飛鏢與靶心的距離來決定獎勵
     const distance = Math.abs(finalPosition - targetPosition);
     let userReward = 0;
     let hitZone = '';
     
-    if (distance <= 5) {
+    const halfTargetWidth = targetWidth / 2;
+    const halfMiddleZoneWidth = middleZoneWidth / 2;
+    
+    if (distance <= halfTargetWidth) {
       // 紅心
       userReward = 50000;
       hitZone = '紅心';
-    } else if (distance <= 15) {
+    } else if (distance <= halfMiddleZoneWidth) {
       // 中間圈
       userReward = 20000;
       hitZone = '中間圈';
@@ -115,12 +172,12 @@ const DartGame = () => {
     // 增加交易記錄
     addTransaction({
       amount: userReward,
-      type: "system", // Changed from "game" to "system"
+      type: "system",
       description: `射飛鏢遊戲獎勵 (${hitZone})`,
     });
     
     // 更新遊戲統計
-    const isBullseye = distance <= 5;
+    const isBullseye = distance <= halfTargetWidth;
     setGameStats(prev => {
       const newTotalPlays = prev.totalPlays + 1;
       const newTotalRewards = prev.totalRewards + userReward;
@@ -163,6 +220,11 @@ const DartGame = () => {
               </CardTitle>
               <CardDescription>
                 瞄準靶心，最高可獲得 50,000 點獎勵！
+                {difficulty > 1 && (
+                  <span className="ml-2 font-medium text-amber-600">
+                    當前難度: {difficulty}/5
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
@@ -178,18 +240,24 @@ const DartGame = () => {
                 >
                   {/* 靶心位置標記 */}
                   <div 
-                    className="absolute h-full w-[10%] bg-red-500 z-10" 
-                    style={{ left: `${targetPosition - 5}%` }}
+                    className="absolute h-full bg-red-500 z-10 transition-all duration-200" 
+                    style={{ 
+                      left: `${targetPosition - (targetWidth/2)}%`,
+                      width: `${targetWidth}%`
+                    }}
                   >
                     <div className="h-full w-full flex items-center justify-center">
-                      <Target className="h-6 w-6 text-white" />
+                      <Target className="h-6 w-6 text-white animate-pulse" />
                     </div>
                   </div>
                   
                   {/* 中間圈位置標記 */}
                   <div 
-                    className="absolute h-full w-[30%] bg-amber-500 opacity-50" 
-                    style={{ left: `${targetPosition - 15}%` }}
+                    className="absolute h-full bg-amber-500 opacity-50 transition-all duration-200" 
+                    style={{ 
+                      left: `${targetPosition - (middleZoneWidth/2)}%`,
+                      width: `${middleZoneWidth}%`
+                    }}
                   ></div>
                   
                   {/* 玩家的準星位置 */}
@@ -304,6 +372,13 @@ const DartGame = () => {
                     <li>擊中紅心（中心）：50,000 點</li>
                     <li>擊中中間圈：20,000 點</li>
                     <li>擊中外圈：5,000 點</li>
+                  </ul>
+                </li>
+                <li>遊戲難度會隨遊玩次數增加：
+                  <ul className="list-disc list-inside pl-4 space-y-1">
+                    <li>難度增加時，紅心和中間圈會變小</li>
+                    <li>難度3以上，靶心會開始移動</li>
+                    <li>難度4-5，靶心移動速度加快</li>
                   </ul>
                 </li>
               </ol>
