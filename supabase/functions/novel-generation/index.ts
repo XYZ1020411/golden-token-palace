@@ -17,13 +17,14 @@ serve(async (req) => {
   }
 
   try {
-    const { customerMessage } = await req.json()
+    const { chapterNumber, previousContent } = await req.json();
 
-    if (!customerMessage || typeof customerMessage !== 'string') {
-      throw new Error("客戶訊息不正確或為空")
+    // Validate input
+    if (!chapterNumber || typeof chapterNumber !== 'number') {
+      throw new Error("章節號碼無效");
     }
 
-    // Call OpenAI API with improved retry mechanism
+    // Call OpenAI API
     let attempts = 0;
     const maxAttempts = 3;
     let response = null;
@@ -32,8 +33,14 @@ serve(async (req) => {
 
     while (attempts < maxAttempts && !success) {
       try {
-        console.log(`嘗試 OpenAI API 請求 (${attempts + 1}/${maxAttempts})`)
-        
+        console.log(`嘗試生成小說章節 ${chapterNumber} (嘗試 ${attempts + 1}/${maxAttempts})`);
+
+        const prompt = `請為一部名為「末日前1個月，我重生喚醒系統」的小說創作第${chapterNumber}章。
+這個故事講述主角在末日前一個月重生，被賦予改變未來的能力。
+${previousContent ? `前一章節內容概要：${previousContent.substring(0, 500)}...` : ''}
+請寫出引人入勝、情節緊湊的章節，長度約1000-1500字，使用繁體中文。
+章節應該包含生動的描述、對話和角色發展，推動故事情節向前發展。`;
+
         response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -45,18 +52,15 @@ serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。' +
-                        '如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。' +
-                        '如果用戶詢問關於商品兌換、點數或VIP功能等問題，可以提供相應的指引。' + 
-                        '回應時請保持簡潔且有幫助性。'
+                content: '你是一位專業小說創作者，擅長撰寫末日重生類型的小說。請創作出引人入勝、充滿張力的小說章節。'
               },
               {
                 role: 'user',
-                content: customerMessage
+                content: prompt
               }
             ],
-            temperature: 0.7,
-            max_tokens: 500
+            temperature: 0.8,
+            max_tokens: 1500
           })
         });
         
@@ -67,7 +71,7 @@ serve(async (req) => {
           }
           
           success = true;
-          console.log("成功收到 OpenAI API 的回應");
+          console.log(`第${chapterNumber}章小說內容生成成功`);
         } else {
           attempts++;
           const errorText = await response.text();
@@ -90,26 +94,30 @@ serve(async (req) => {
     }
 
     if (!success || !response) {
-      throw new Error(`AI API 請求失敗，原因: ${lastError}`)
+      throw new Error(`小說生成失敗，原因: ${lastError}`)
     }
 
     const data = await response.json();
-    console.log("OpenAI API 回應成功解析");
+    console.log("小說章節回應成功解析");
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       throw new Error('無效的 OpenAI API 回應格式');
     }
     
-    const aiResponse = data.choices[0].message.content;
+    const novelContent = data.choices[0].message.content;
 
-    return new Response(JSON.stringify({ response: aiResponse }), {
+    return new Response(JSON.stringify({ 
+      content: novelContent,
+      chapterNumber: chapterNumber
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      response: '抱歉，AI 助手暫時無法使用。請稍後再試。'
+      content: '很抱歉，無法生成今天的小說章節。請稍後再試。',
+      chapterNumber: 0
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

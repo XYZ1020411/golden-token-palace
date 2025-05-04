@@ -1,1 +1,8 @@
+
 project_id = "fohoticyvvddiqvdvjuk"
+
+[functions.ai-customer-service]
+verify_jwt = false
+
+[functions.novel-generation]
+verify_jwt = false

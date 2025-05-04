@@ -20,10 +20,7 @@ export const getAiAssistantResponse = async (
         console.log(`正在嘗試獲取AI回應 (嘗試 ${attempts + 1}/${maxAttempts})`);
         
         const { data, error } = await supabase.functions.invoke('ai-customer-service', {
-          body: { customerMessage },
-          headers: {
-            "x-timeout-ms": "15000"
-          }
+          body: { customerMessage }
         });
 
         if (error) {

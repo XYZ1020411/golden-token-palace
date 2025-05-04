@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Book, Calendar, ArrowLeft } from "lucide-react";
+import { Book, Calendar, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { generateNovelChapter } from "@/services/novelService";
 
 interface Chapter {
   id: number;
@@ -23,6 +24,7 @@ const DailyNovel = () => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [hasReadToday, setHasReadToday] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Novel background and initial setup
   const novelBackground = "末日前1個月，我重生喚醒系統";
@@ -334,47 +336,61 @@ const DailyNovel = () => {
     setChapters(initialChapters);
   }, []);
 
-  const generateTodayChapter = () => {
+  const generateTodayChapter = async () => {
+    setIsGenerating(true);
     const today = new Date();
     const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     
-    // Create a new chapter for today
-    const newChapter: Chapter = {
-      id: chapters.length + 1,
-      title: `第${chapters.length + 1}章：末日倒計時`,
-      content: `[今日章節內容將由AI生成...]
+    try {
+      // Get the previous chapter's content for context
+      const lastChapter = chapters[chapters.length - 1];
+      const previousContent = lastChapter ? lastChapter.content : "";
+      
+      // Generate new chapter using our AI service
+      const response = await generateNovelChapter(chapters.length + 1, previousContent);
+      
+      if (response.status === 'error') {
+        toast({
+          title: "生成失敗",
+          description: "無法生成今日章節，請稍後再試",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Create a new chapter with the generated content
+      const newChapter: Chapter = {
+        id: chapters.length + 1,
+        title: `第${chapters.length + 1}章：末日倒計時`,
+        content: response.content,
+        date: formattedToday,
+        isToday: true
+      };
 
-無論如何，時間一天天過去，距離末日的倒計時不斷縮短。我和莉娜竭盡全力收集證據，試圖說服更多人相信我們的警告。
-
-安德森教授雖然表面上依然支持項目繼續，但我能感覺到他內心的動搖。他開始更頻繁地檢查數據，要求更多的安全測試。
-
-霍夫注意到了這些變化，對安德森教授的監視也更加嚴密。我們必須更加小心行事。
-
-「如果正面對抗失敗，我們需要一個後備計劃，」我對莉娜說，「即使必須以破壞設施為代價。」
-
-莉娜震驚地看著我：「你是認真的嗎？那是...」
-
-「恐怖主義？或許吧。」我苦笑，「但如果是在毀滅整個世界和摧毀一個設施之間做選擇，你會怎麼選？」
-
-她沉默了，因為我們都知道答案。時間不多了，我們必須準備走上一條不可回頭的道路...`,
-      date: formattedToday,
-      isToday: true
-    };
-
-    // Add the new chapter to our list
-    setChapters([...chapters, newChapter]);
-    
-    // Select the new chapter to read
-    setSelectedChapter(newChapter);
-    
-    // Mark that user has read today's chapter
-    setHasReadToday(true);
-    
-    // Show notification
-    toast({
-      title: "今日章節已生成",
-      description: "新的章節已經添加到您的閱讀列表中。",
-    });
+      // Add the new chapter to our list
+      setChapters([...chapters, newChapter]);
+      
+      // Select the new chapter to read
+      setSelectedChapter(newChapter);
+      
+      // Mark that user has read today's chapter
+      setHasReadToday(true);
+      
+      // Show notification
+      toast({
+        title: "今日章節已生成",
+        description: "新的章節已經添加到您的閱讀列表中。",
+      });
+    } catch (error) {
+      console.error("生成章節時出錯:", error);
+      toast({
+        title: "生成失敗",
+        description: "生成今日章節時發生錯誤，請稍後再試",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleReadChapter = (chapter: Chapter) => {
@@ -397,9 +413,17 @@ const DailyNovel = () => {
           </div>
           
           {!selectedChapter && !hasReadToday && (
-            <Button onClick={generateTodayChapter} className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              生成今日章節
+            <Button 
+              onClick={generateTodayChapter} 
+              className="flex items-center"
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Calendar className="h-4 w-4 mr-2" />
+              )}
+              {isGenerating ? "正在生成..." : "生成今日章節"}
             </Button>
           )}
         </div>
@@ -480,9 +504,17 @@ const DailyNovel = () => {
                     <p>點擊「生成今日章節」按鈕來繼續故事的發展。</p>
                   </CardContent>
                   <CardFooter>
-                    <Button onClick={generateTodayChapter} className="w-full">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      生成今日章節
+                    <Button 
+                      onClick={generateTodayChapter} 
+                      className="w-full"
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Calendar className="h-4 w-4 mr-2" />
+                      )}
+                      {isGenerating ? "正在生成..." : "生成今日章節"}
                     </Button>
                   </CardFooter>
                 </Card>
