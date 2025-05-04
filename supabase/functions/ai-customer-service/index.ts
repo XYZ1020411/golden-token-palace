@@ -7,13 +7,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// 系統維護時間
+// 系統維護時間 - 每週日下午3點至4點
 const maintenanceSchedule = {
   active: true,
-  startTime: "2025-05-05T02:00:00Z", // UTC時間
-  endTime: "2025-05-05T06:00:00Z",   // UTC時間
-  message: "系統將於5月5日上午10點至下午2點進行維護，期間客服功能可能受到影響。"
-}
+  checkInMaintenanceWindow: () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 is Sunday
+    const hour = now.getHours();
+    
+    // 檢查是否為週日(0)且時間在15:00-16:00之間
+    return day === 0 && hour >= 15 && hour < 16;
+  },
+  message: "系統目前處於定期維護時間（每週日下午3點至4點），期間客服功能可能受到影響。請稍後再試。"
+};
 
 // 預設回覆庫
 const predefinedResponses = {
@@ -31,14 +37,13 @@ const predefinedResponses = {
   bug: "非常抱歉您遇到了問題。請提供具體情況，如操作步驟、錯誤提示等。我們會記錄並轉交技術團隊處理。您也可以嘗試重新登入或清除瀏覽器緩存。",
   
   // 系統維護相關
-  maintenance: "系統將於5月5日上午10點至下午2點進行維護，期間部分功能可能無法正常使用。維護結束後所有服務將恢復正常。感謝您的理解與支持。"
+  maintenance: "系統目前處於定期維護時間（每週日下午3點至4點），期間部分功能可能無法正常使用。維護結束後所有服務將恢復正常。感謝您的理解與支持。"
 };
 
 // 根據用户輸入選擇合適的預設回覆
 function selectResponse(message: string): string {
   // 檢查是否在維護時間段內
-  const now = new Date();
-  if (maintenanceSchedule.active) {
+  if (maintenanceSchedule.active && maintenanceSchedule.checkInMaintenanceWindow()) {
     // 先返回維護訊息，再根據問題內容給出回答
     const maintenanceNotice = maintenanceSchedule.message + "\n\n";
     
