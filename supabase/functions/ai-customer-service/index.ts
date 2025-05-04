@@ -7,8 +7,92 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// 直接在代碼中使用API密鑰
-const OPENAI_API_KEY = "sk-jHBy7rX2baWkXBWh592847D10cFe48CdAdB11f5295B1A1De";
+// 系統維護時間
+const maintenanceSchedule = {
+  active: true,
+  startTime: "2025-05-05T02:00:00Z", // UTC時間
+  endTime: "2025-05-05T06:00:00Z",   // UTC時間
+  message: "系統將於5月5日上午10點至下午2點進行維護，期間客服功能可能受到影響。"
+}
+
+// 預設回覆庫
+const predefinedResponses = {
+  default: "感謝您的提問。我是AI客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？",
+  greeting: "您好！歡迎使用我們的客服系統。請問有什麼我可以幫助您的？",
+  goodbye: "感謝您的咨詢！如果還有其他問題，隨時可以再來詢問。祝您有愉快的一天！",
+  thanks: "不客氣！很高興能夠幫到您。如果還有其他問題，請隨時提問。",
+  
+  // 常見問題回覆
+  account: "關於帳號問題，您可以在「個人資料」頁面進行基本資料修改。如需更改重要資訊如綁定郵箱或手機號，請點擊「安全設置」。忘記密碼請使用登入頁面的「忘記密碼」功能。",
+  points: "點數可以通過完成任務、每日登入、參與活動等方式獲取。您可以在「我的錢包」頁面查看當前點數並了解獲取和使用方式。",
+  vip: "VIP會員可享有專屬禮包、加速點數獲取、獨家內容和活動等特權。您可以在「VIP專區」了解詳細權益和升級方式。",
+  giftcode: "禮包碼可在「禮包兌換」頁面輸入兌換。請確保輸入正確且注意大小寫。部分禮包碼有時效性和使用條件，請留意相關說明。",
+  payment: "我們支援多種支付方式，包括信用卡、電子錢包和行動支付。若遇到支付問題，建議檢查網絡連接、卡片餘額，或聯繫您的銀行確認交易狀態。",
+  bug: "非常抱歉您遇到了問題。請提供具體情況，如操作步驟、錯誤提示等。我們會記錄並轉交技術團隊處理。您也可以嘗試重新登入或清除瀏覽器緩存。",
+  
+  // 系統維護相關
+  maintenance: "系統將於5月5日上午10點至下午2點進行維護，期間部分功能可能無法正常使用。維護結束後所有服務將恢復正常。感謝您的理解與支持。"
+};
+
+// 根據用户輸入選擇合適的預設回覆
+function selectResponse(message: string): string {
+  // 檢查是否在維護時間段內
+  const now = new Date();
+  if (maintenanceSchedule.active) {
+    // 先返回維護訊息，再根據問題內容給出回答
+    const maintenanceNotice = maintenanceSchedule.message + "\n\n";
+    
+    // 然後再提供一般回答
+    message = message.toLowerCase();
+    
+    if (message.includes("你好") || message.includes("嗨") || message.includes("哈囉") || message.includes("早安") || message.includes("午安") || message.includes("晚安")) {
+      return maintenanceNotice + predefinedResponses.greeting;
+    } else if (message.includes("謝謝") || message.includes("感謝")) {
+      return maintenanceNotice + predefinedResponses.thanks;
+    } else if (message.includes("帳號") || message.includes("登入") || message.includes("註冊") || message.includes("密碼")) {
+      return maintenanceNotice + predefinedResponses.account;
+    } else if (message.includes("點數") || message.includes("積分") || message.includes("幣")) {
+      return maintenanceNotice + predefinedResponses.points;
+    } else if (message.includes("vip") || message.includes("會員")) {
+      return maintenanceNotice + predefinedResponses.vip;
+    } else if (message.includes("禮包") || message.includes("兌換碼") || message.includes("兌換") || message.includes("code")) {
+      return maintenanceNotice + predefinedResponses.giftcode;
+    } else if (message.includes("支付") || message.includes("付款") || message.includes("充值") || message.includes("購買")) {
+      return maintenanceNotice + predefinedResponses.payment;
+    } else if (message.includes("bug") || message.includes("問題") || message.includes("故障") || message.includes("錯誤") || message.includes("無法")) {
+      return maintenanceNotice + predefinedResponses.bug;
+    } else if (message.includes("維護") || message.includes("更新") || message.includes("升級")) {
+      return predefinedResponses.maintenance;
+    } else {
+      return maintenanceNotice + predefinedResponses.default;
+    }
+  }
+  
+  // 非維護時間的一般回應
+  message = message.toLowerCase();
+  
+  if (message.includes("你好") || message.includes("嗨") || message.includes("哈囉") || message.includes("早安") || message.includes("午安") || message.includes("晚安")) {
+    return predefinedResponses.greeting;
+  } else if (message.includes("謝謝") || message.includes("感謝")) {
+    return predefinedResponses.thanks;
+  } else if (message.includes("帳號") || message.includes("登入") || message.includes("註冊") || message.includes("密碼")) {
+    return predefinedResponses.account;
+  } else if (message.includes("點數") || message.includes("積分") || message.includes("幣")) {
+    return predefinedResponses.points;
+  } else if (message.includes("vip") || message.includes("會員")) {
+    return predefinedResponses.vip;
+  } else if (message.includes("禮包") || message.includes("兌換碼") || message.includes("兌換") || message.includes("code")) {
+    return predefinedResponses.giftcode;
+  } else if (message.includes("支付") || message.includes("付款") || message.includes("充值") || message.includes("購買")) {
+    return predefinedResponses.payment;
+  } else if (message.includes("bug") || message.includes("問題") || message.includes("故障") || message.includes("錯誤") || message.includes("無法")) {
+    return predefinedResponses.bug;
+  } else if (message.includes("維護") || message.includes("更新") || message.includes("升級")) {
+    return predefinedResponses.maintenance;
+  } else {
+    return predefinedResponses.default;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -23,85 +107,12 @@ serve(async (req) => {
       throw new Error("客戶訊息不正確或為空")
     }
 
-    // Call OpenAI API with improved retry mechanism
-    let attempts = 0;
-    const maxAttempts = 3;
-    let response = null;
-    let success = false;
-    let lastError = null;
-
-    while (attempts < maxAttempts && !success) {
-      try {
-        console.log(`嘗試 OpenAI API 請求 (${attempts + 1}/${maxAttempts})`)
-        
-        response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: '你是一個專業的客服人員，負責回答用戶的問題。請以專業、友善且有禮貌的方式回應。' +
-                        '如果遇到系統相關問題，請表達歉意並承諾會轉交相關部門處理。' +
-                        '如果用戶詢問關於商品兌換、點數或VIP功能等問題，可以提供相應的指引。' + 
-                        '回應時請保持簡潔且有幫助性。'
-              },
-              {
-                role: 'user',
-                content: customerMessage
-              }
-            ],
-            temperature: 0.7,
-            max_tokens: 500
-          })
-        });
-        
-        if (response.status === 200) {
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`非預期的回應格式: ${contentType}`);
-          }
-          
-          success = true;
-          console.log("成功收到 OpenAI API 的回應");
-        } else {
-          attempts++;
-          const errorText = await response.text();
-          lastError = `API 請求失敗 (狀態碼: ${response.status}): ${errorText}`;
-          console.error(lastError);
-          
-          // Add an exponential backoff before retrying
-          const delay = Math.pow(2, attempts) * 500;
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      } catch (error) {
-        attempts++;
-        lastError = `API 請求異常: ${error.message || error}`;
-        console.error(lastError);
-        
-        // Add an exponential backoff before retrying
-        const delay = Math.pow(2, attempts) * 500;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-
-    if (!success || !response) {
-      throw new Error(`AI API 請求失敗，原因: ${lastError}`)
-    }
-
-    const data = await response.json();
-    console.log("OpenAI API 回應成功解析");
+    // 不再呼叫 OpenAI API，直接使用預設回覆
+    console.log("處理用戶訊息:", customerMessage);
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-      throw new Error('無效的 OpenAI API 回應格式');
-    }
+    const aiResponse = selectResponse(customerMessage);
+    console.log("回應用戶訊息");
     
-    const aiResponse = data.choices[0].message.content;
-
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
