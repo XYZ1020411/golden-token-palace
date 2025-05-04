@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 // 直接在代碼中使用API密鑰
-const OPENAI_API_KEY = "sk-184a5013c2ea446095874c4a0e5ea720";
+const OPENAI_API_KEY = "sk-jHBy7rX2baWkXBWh592847D10cFe48CdAdB11f5295B1A1De";
 
 serve(async (req) => {
   // Handle CORS preflight requests
