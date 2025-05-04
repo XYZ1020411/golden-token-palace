@@ -35,6 +35,14 @@ const mockWishes = [
     content: "希望能增加更多遊戲", 
     status: "rejected",
     createdAt: new Date(Date.now() - 172800000).toISOString() 
+  },
+  {
+    id: "4",
+    userId: "admin",
+    username: "管理員",
+    content: "小說章節已更新至1000億集",
+    status: "approved",
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -51,7 +59,26 @@ export const WishPoolManagement = () => {
     return matchesSearch && matchesStatus;
   });
   
+  // 检查是否在维护时间内
+  const isInMaintenanceWindow = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 is Sunday
+    const hour = now.getHours();
+    
+    // 檢查是否為週日(0)且時間在15:00-16:00之間
+    return day === 0 && hour >= 15 && hour < 16;
+  };
+  
   const handleStatusChange = (wishId, newStatus) => {
+    if (isInMaintenanceWindow()) {
+      toast({
+        title: "系統維護中",
+        description: "系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setWishes(wishes.map(wish => 
       wish.id === wishId ? { ...wish, status: newStatus } : wish
     ));
@@ -63,6 +90,15 @@ export const WishPoolManagement = () => {
   };
   
   const handleDeleteWish = (wishId) => {
+    if (isInMaintenanceWindow()) {
+      toast({
+        title: "系統維護中",
+        description: "系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setWishes(wishes.filter(wish => wish.id !== wishId));
     
     toast({
@@ -72,6 +108,15 @@ export const WishPoolManagement = () => {
   };
   
   const handleAddWish = () => {
+    if (isInMaintenanceWindow()) {
+      toast({
+        title: "系統維護中",
+        description: "系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (!newWishContent.trim()) {
       toast({
         title: "內容不能為空",

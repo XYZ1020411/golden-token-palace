@@ -19,6 +19,7 @@ import DartGame from "./pages/DartGame";
 import NovelSystem from "./pages/NovelSystem";
 import GiftCode from "./pages/GiftCode";
 import DailyNovel from "./pages/DailyNovel";
+import WishPool from "./pages/WishPool"; // Add this line
 
 import { AuthProvider } from "./context/AuthContext";
 import { WalletProvider } from "./context/WalletContext";
@@ -60,6 +61,7 @@ function App() {
                     <Route path="/novels" element={<NovelSystem />} />
                     <Route path="/daily-novel" element={<DailyNovel />} />
                     <Route path="/gift-code" element={<GiftCode />} />
+                    <Route path="/wish-pool" element={<WishPool />} /> {/* Add this line */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <AiCustomerService />

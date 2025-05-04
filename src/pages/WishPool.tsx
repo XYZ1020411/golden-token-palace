@@ -1,0 +1,67 @@
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import MainLayout from "@/components/layout/MainLayout";
+import { WishPool as WishPoolComponent } from "@/components/wish/WishPool";
+
+const WishPool = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // 检查是否在维护时间内
+  const [isInMaintenance, setIsInMaintenance] = useState(false);
+  
+  useEffect(() => {
+    const checkMaintenanceSchedule = () => {
+      const now = new Date();
+      const day = now.getDay(); // 0 is Sunday
+      const hour = now.getHours();
+      
+      // 檢查是否為週日(0)且時間在15:00-16:00之間
+      const inMaintenance = day === 0 && hour >= 15 && hour < 16;
+      setIsInMaintenance(inMaintenance);
+    };
+    
+    checkMaintenanceSchedule();
+    // 每分鐘檢查一次維護狀態
+    const interval = setInterval(checkMaintenanceSchedule, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <MainLayout showBackButton>
+      {isInMaintenance ? (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">系統維護中</h1>
+          <p className="text-lg text-muted-foreground mb-4">
+            系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。
+          </p>
+          <p className="text-muted-foreground">
+            請於維護時間結束後再次訪問。感謝您的理解與支持。
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">
+            用戶許願池
+          </h1>
+          <p className="text-muted-foreground">
+            在這裡提出您的建議和願望，最受歡迎的功能有機會被實現！
+          </p>
+          
+          <WishPoolComponent />
+        </div>
+      )}
+    </MainLayout>
+  );
+};
+
+export default WishPool;

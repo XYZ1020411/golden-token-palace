@@ -18,7 +18,8 @@ import {
   Terminal,
   Target,
   PartyPopper,
-  BookOpen
+  BookOpen,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -107,6 +108,11 @@ export function Sidebar() {
       icon: Target,
       label: "射飛鏢",
       href: "/dart-game",
+    },
+    {
+      icon: Star,
+      label: "許願池",
+      href: "/wish-pool",
     },
   ];
 

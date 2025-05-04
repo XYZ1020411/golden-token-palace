@@ -7,10 +7,11 @@ import { useInfoServices } from "@/context/InfoServicesContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
-import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell, BookOpen } from "lucide-react";
+import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell, BookOpen, Star } from "lucide-react";
 import { CouponRedemption } from "@/components/product/CouponRedemption";
 import { AnnouncementBoard } from "@/components/announcement/AnnouncementBoard";
 import { AiCustomerService } from "@/components/customer-service/AiCustomerService";
+import { WishPool } from "@/components/wish/WishPool";
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -161,6 +162,11 @@ const Dashboard = () => {
           <AnnouncementBoard />
         </div>
 
+        {/* WishPool Section - NEW */}
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          <WishPool />
+        </div>
+
         {/* Information cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Weather card - takes 3 columns */}
@@ -224,7 +230,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Product Coupon Redemption Section - UPDATED */}
+        {/* Product Coupon Redemption Section */}
         {user && user.role !== "admin" && (
           <>
             <h2 className="text-2xl font-semibold mt-6">商品券兌換</h2>
@@ -233,7 +239,7 @@ const Dashboard = () => {
         )}
 
         {/* Quick action buttons */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-6">
           <Button variant="outline" onClick={() => navigate("/wallet")}>
             <CreditCard className="mr-2 h-4 w-4" />
             查看錢包
@@ -263,6 +269,14 @@ const Dashboard = () => {
           >
             <BookOpen className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
             每日小說
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-800"
+          >
+            <Star className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+            許願池
           </Button>
         </div>
       </div>
