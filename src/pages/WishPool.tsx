@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { WishPool as WishPoolComponent } from "@/components/wish/WishPool";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const WishPool = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -15,7 +17,7 @@ const WishPool = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // 检查是否在维护时间内
+  // 檢查是否在維護時間內 - 更新為每天晚上6點到8點
   const [isInMaintenance, setIsInMaintenance] = useState(false);
   
   useEffect(() => {
@@ -48,8 +50,8 @@ const WishPool = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className={`space-y-6 ${isMobile ? "px-2" : ""}`}>
+          <h1 className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold tracking-tight`}>
             用戶許願池
           </h1>
           <p className="text-muted-foreground">

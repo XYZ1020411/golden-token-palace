@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 import { Star } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // 模擬願望數據 - 在真實應用中，這會來自API或上下文
 const initialWishes = [
@@ -48,6 +49,7 @@ export const WishPool = () => {
   const [wishes, setWishes] = useState(initialWishes);
   const [newWish, setNewWish] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // 检查是否在维护时间内
   const isInMaintenanceWindow = () => {
@@ -123,7 +125,7 @@ export const WishPool = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">許願池</h2>
+        <h2 className={`${isMobile ? "text-xl" : "text-2xl"} font-bold`}>許願池</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -131,7 +133,7 @@ export const WishPool = () => {
               許下願望
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className={isMobile ? "w-[90%] max-w-md" : ""}>
             <DialogHeader>
               <DialogTitle>許下您的願望</DialogTitle>
               <DialogDescription>
@@ -144,7 +146,7 @@ export const WishPool = () => {
               placeholder="請輸入您的願望..."
               className="min-h-[100px]"
             />
-            <DialogFooter>
+            <DialogFooter className={isMobile ? "flex-col gap-2" : ""}>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 取消
               </Button>
@@ -154,7 +156,7 @@ export const WishPool = () => {
         </Dialog>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "md:grid-cols-2"}`}>
         {sortedWishes.map((wish) => (
           <Card key={wish.id}>
             <CardHeader className="pb-2">

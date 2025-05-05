@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Novel {
   id: string;
@@ -158,6 +158,7 @@ const NovelSystem = () => {
   const [novelTypes, setNovelTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
   const [isInMaintenance, setIsInMaintenance] = useState(false);
+  const isMobile = useIsMobile();
   
   // Extract all novel types
   useEffect(() => {
@@ -165,7 +166,7 @@ const NovelSystem = () => {
     setNovelTypes(types);
   }, []);
   
-  // Check maintenance time
+  // Check maintenance time - updated to 6PM-8PM daily
   useEffect(() => {
     const checkMaintenanceSchedule = () => {
       const now = new Date();
@@ -262,7 +263,7 @@ const NovelSystem = () => {
           </div>
 
           {readingMode && selectedChapter ? (
-            // Reading mode - display chapter content
+            // Reading mode - display chapter content with responsive design
             <Card className="bg-white dark:bg-gray-950">
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -285,10 +286,10 @@ const NovelSystem = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[60vh] rounded-md p-4">
+                <ScrollArea className={`${isMobile ? "h-[50vh]" : "h-[60vh]"} rounded-md p-4`}>
                   <div className="prose dark:prose-invert max-w-none">
                     {selectedChapter.content.split('\n\n').map((paragraph, index) => (
-                      <p key={index} className="mb-4 text-lg leading-relaxed">{paragraph}</p>
+                      <p key={index} className={`mb-4 ${isMobile ? "text-base" : "text-lg"} leading-relaxed`}>{paragraph}</p>
                     ))}
                   </div>
                 </ScrollArea>
@@ -307,7 +308,7 @@ const NovelSystem = () => {
               </CardFooter>
             </Card>
           ) : selectedNovel ? (
-            // Novel detail view
+            // Novel detail view - responsive
             <div className="grid gap-6 md:grid-cols-3">
               <div className="md:col-span-1">
                 <Card>
@@ -326,7 +327,7 @@ const NovelSystem = () => {
                           <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                         )}
                       </div>
-                      <div className="text-center">
+                      <div className="text-center w-full">
                         <Button 
                           className="w-full mb-2" 
                           onClick={() => handleStartReading(selectedNovel)}
@@ -420,7 +421,7 @@ const NovelSystem = () => {
               </div>
             </div>
           ) : (
-            // Novel list view
+            // Novel list view - improved with responsive design
             <>
               <div className="flex flex-col md:flex-row gap-4 items-end mb-4">
                 <div className="w-full md:w-1/2">
@@ -446,7 +447,7 @@ const NovelSystem = () => {
               </div>
               
               <Tabs defaultValue="all">
-                <TabsList className="mb-4">
+                <TabsList className="mb-4 flex-wrap">
                   <TabsTrigger value="all">全部</TabsTrigger>
                   <TabsTrigger value="featured">精選</TabsTrigger>
                   <TabsTrigger value="new">最新</TabsTrigger>
@@ -454,7 +455,7 @@ const NovelSystem = () => {
                 </TabsList>
                 
                 <TabsContent value="all" className="mt-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredNovels.map((novel) => (
                       <Card key={novel.id} className="overflow-hidden">
                         <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
@@ -470,16 +471,16 @@ const NovelSystem = () => {
                             <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                           )}
                         </div>
-                        <CardHeader className="pb-2">
+                        <CardHeader className={`${isMobile ? "p-3" : "pb-2"}`}>
                           <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
                             {novel.title}
                           </CardTitle>
                           <CardDescription>{novel.author}</CardDescription>
                         </CardHeader>
-                        <CardContent className="pb-2">
+                        <CardContent className={`${isMobile ? "p-3" : "pb-2"}`}>
                           <div className="flex flex-wrap gap-2 mb-2">
                             <Badge variant="outline">{novel.type}</Badge>
-                            {novel.tags.map(tag => (
+                            {!isMobile && novel.tags.map(tag => (
                               <Badge key={tag} variant="secondary">{tag}</Badge>
                             ))}
                           </div>
@@ -494,7 +495,7 @@ const NovelSystem = () => {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className={isMobile ? "p-3 pt-0" : undefined}>
                           <Button className="w-full" onClick={() => handleStartReading(novel)}>
                             開始閱讀
                           </Button>
@@ -504,8 +505,9 @@ const NovelSystem = () => {
                   </div>
                 </TabsContent>
                 
+                {/* Other tab contents with similar structure - using responsive grid for all tabs */}
                 <TabsContent value="featured" className="mt-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredNovels
                       .filter(novel => novel.isFeatured)
                       .map((novel) => (
@@ -523,16 +525,16 @@ const NovelSystem = () => {
                               <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                             )}
                           </div>
-                          <CardHeader className="pb-2">
+                          <CardHeader className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
                               {novel.title}
                             </CardTitle>
                             <CardDescription>{novel.author}</CardDescription>
                           </CardHeader>
-                          <CardContent className="pb-2">
+                          <CardContent className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <div className="flex flex-wrap gap-2 mb-2">
                               <Badge variant="outline">{novel.type}</Badge>
-                              {novel.tags.map(tag => (
+                              {!isMobile && novel.tags.map(tag => (
                                 <Badge key={tag} variant="secondary">{tag}</Badge>
                               ))}
                             </div>
@@ -547,7 +549,7 @@ const NovelSystem = () => {
                               </div>
                             </div>
                           </CardContent>
-                          <CardFooter>
+                          <CardFooter className={isMobile ? "p-3 pt-0" : undefined}>
                             <Button className="w-full" onClick={() => handleStartReading(novel)}>
                               開始閱讀
                             </Button>
@@ -558,7 +560,7 @@ const NovelSystem = () => {
                 </TabsContent>
                 
                 <TabsContent value="new" className="mt-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredNovels
                       .filter(novel => novel.isNew)
                       .map((novel) => (
@@ -574,16 +576,16 @@ const NovelSystem = () => {
                               <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                             )}
                           </div>
-                          <CardHeader className="pb-2">
+                          <CardHeader className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
                               {novel.title}
                             </CardTitle>
                             <CardDescription>{novel.author}</CardDescription>
                           </CardHeader>
-                          <CardContent className="pb-2">
+                          <CardContent className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <div className="flex flex-wrap gap-2 mb-2">
                               <Badge variant="outline">{novel.type}</Badge>
-                              {novel.tags.map(tag => (
+                              {!isMobile && novel.tags.map(tag => (
                                 <Badge key={tag} variant="secondary">{tag}</Badge>
                               ))}
                             </div>
@@ -598,7 +600,7 @@ const NovelSystem = () => {
                               </div>
                             </div>
                           </CardContent>
-                          <CardFooter>
+                          <CardFooter className={isMobile ? "p-3 pt-0" : undefined}>
                             <Button className="w-full" onClick={() => handleStartReading(novel)}>
                               開始閱讀
                             </Button>
@@ -609,7 +611,7 @@ const NovelSystem = () => {
                 </TabsContent>
                 
                 <TabsContent value="hot" className="mt-0">
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredNovels
                       .filter(novel => novel.isHot)
                       .map((novel) => (
@@ -625,16 +627,16 @@ const NovelSystem = () => {
                             )}
                             <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                           </div>
-                          <CardHeader className="pb-2">
+                          <CardHeader className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
                               {novel.title}
                             </CardTitle>
                             <CardDescription>{novel.author}</CardDescription>
                           </CardHeader>
-                          <CardContent className="pb-2">
+                          <CardContent className={`${isMobile ? "p-3" : "pb-2"}`}>
                             <div className="flex flex-wrap gap-2 mb-2">
                               <Badge variant="outline">{novel.type}</Badge>
-                              {novel.tags.map(tag => (
+                              {!isMobile && novel.tags.map(tag => (
                                 <Badge key={tag} variant="secondary">{tag}</Badge>
                               ))}
                             </div>
@@ -649,7 +651,7 @@ const NovelSystem = () => {
                               </div>
                             </div>
                           </CardContent>
-                          <CardFooter>
+                          <CardFooter className={isMobile ? "p-3 pt-0" : undefined}>
                             <Button className="w-full" onClick={() => handleStartReading(novel)}>
                               開始閱讀
                             </Button>
