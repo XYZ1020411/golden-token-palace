@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/components/ui/use-toast";
 import { Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { checkMaintenanceTime } from "@/utils/novelUtils";
 
 // 模擬願望數據 - 在真實應用中，這會來自API或上下文
 const initialWishes = [
@@ -50,18 +51,9 @@ export const WishPool = () => {
   const [newWish, setNewWish] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
-  
-  // 检查是否在维护时间内
-  const isInMaintenanceWindow = () => {
-    const now = new Date();
-    const hour = now.getHours();
-    
-    // 每天晚上6點到晚上8點進行維護
-    return hour >= 18 && hour < 20;
-  };
 
   const handleSubmitWish = () => {
-    if (isInMaintenanceWindow()) {
+    if (checkMaintenanceTime()) {
       toast({
         title: "系統維護中",
         description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間許願池功能暫時無法使用。",
@@ -100,7 +92,7 @@ export const WishPool = () => {
   };
   
   const handleVote = (id: string) => {
-    if (isInMaintenanceWindow()) {
+    if (checkMaintenanceTime()) {
       toast({
         title: "系統維護中",
         description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間許願池功能暫時無法使用。",
