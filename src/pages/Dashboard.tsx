@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -7,11 +8,12 @@ import { useInfoServices } from "@/context/InfoServicesContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
-import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell, BookOpen, Star } from "lucide-react";
+import { CalendarCheck, CreditCard, Gift, User, CloudSun, FileText, Bell, BookOpen, Star, AlertTriangle } from "lucide-react";
 import { CouponRedemption } from "@/components/product/CouponRedemption";
 import { AnnouncementBoard } from "@/components/announcement/AnnouncementBoard";
 import { AiCustomerService } from "@/components/customer-service/AiCustomerService";
 import { WishPool } from "@/components/wish/WishPool";
+import { toast } from "@/components/ui/use-toast";
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -19,22 +21,58 @@ const Dashboard = () => {
   const { vipLevel, dailyRewardClaimed, claimDailyReward } = useVip();
   const { weatherData, newsItems, currentWeatherAlerts } = useInfoServices();
   const navigate = useNavigate();
+  
+  // Check if in maintenance time
+  const isMaintenanceTime = () => {
+    const now = new Date();
+    const hour = now.getHours();
+    return hour >= 18 && hour < 20;
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
     }
   }, [isAuthenticated, navigate]);
+  
+  // Check maintenance on load
+  useEffect(() => {
+    if (isMaintenanceTime()) {
+      toast({
+        title: "系統維護通知",
+        description: "目前處於系統維護時間（每天晚上6點至8點），部分功能可能無法使用。",
+        variant: "default"
+      });
+    }
+  }, []);
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("zh-TW").format(num);
   };
 
   const handleClaimReward = async () => {
+    if (isMaintenanceTime()) {
+      toast({
+        title: "系統維護中",
+        description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間此功能暫時無法使用。",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const success = await claimDailyReward();
     if (success) {
       // Reward claimed successfully
     }
+  };
+  
+  const handleBalloonGame = () => {
+    toast({
+      title: "氣球遊戲獎勵系統通知",
+      description: "氣球遊戲獎勵系統目前出現問題，技術團隊正在修復中。請稍後再試。",
+      variant: "destructive"
+    });
+    navigate("/balloon-game");
   };
 
   if (!user) return null;
@@ -50,6 +88,28 @@ const Dashboard = () => {
           <p className="text-muted-foreground">
             查看您的帳戶概況，管理您的點數，享受{user.role === "vip" ? "VIP" : ""}功能
           </p>
+          
+          {/* Maintenance Notice */}
+          {isMaintenanceTime() && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4 mt-2">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                <p className="text-yellow-800 dark:text-yellow-300">
+                  系統維護中（每天晚上6點至8點）- 部分功能可能受限
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Balloon Game Issue Notice */}
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
+              <p className="text-red-800 dark:text-red-300">
+                氣球遊戲獎勵系統目前出現問題，技術團隊正在修復中
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Main stats */}
@@ -162,7 +222,7 @@ const Dashboard = () => {
           <AnnouncementBoard />
         </div>
 
-        {/* WishPool Section - NEW */}
+        {/* WishPool Section */}
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
           <WishPool />
         </div>
@@ -274,10 +334,36 @@ const Dashboard = () => {
           <Button 
             variant="outline"
             className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-800"
+            onClick={() => navigate("/wish-pool")}
           >
             <Star className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
             許願池
           </Button>
+        </div>
+        
+        {/* Game Section */}
+        <div className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">遊戲中心</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Button 
+              variant="outline" 
+              onClick={handleBalloonGame}
+              className="flex flex-col h-24 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200"
+            >
+              <AlertTriangle className="h-6 w-6 text-red-600 mb-2" />
+              <span>氣球遊戲</span>
+              <span className="text-xs text-red-600 mt-1">獎勵系統維修中</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/dart-game")}
+              className="flex flex-col h-24"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <span>飛鏢遊戲</span>
+            </Button>
+          </div>
         </div>
       </div>
       

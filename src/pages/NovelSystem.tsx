@@ -5,12 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Book, BookOpen, BookmarkIcon, Star, ThumbsUp, Clock, Eye } from "lucide-react";
+import { ArrowLeft, Book, BookOpen, BookmarkIcon, Star, ThumbsUp, Clock, Eye, Filter } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Novel {
   id: string;
@@ -27,6 +28,7 @@ interface Novel {
   isNew: boolean;
   isHot: boolean;
   isFeatured: boolean;
+  type: string;
 }
 
 interface NovelChapter {
@@ -37,6 +39,9 @@ interface NovelChapter {
   views: number;
 }
 
+// All novels now have 1 billion chapters
+const CHAPTERS_COUNT = 100000000;
+
 const mockNovels: Novel[] = [
   {
     id: "1",
@@ -45,14 +50,15 @@ const mockNovels: Novel[] = [
     coverImage: "https://source.unsplash.com/random/300x400/?fantasy",
     tags: ["仙俠", "奇幻", "武俠"],
     rating: 4.8,
-    chapters: 120,
+    chapters: CHAPTERS_COUNT,
     views: 564892,
     likes: 45328,
     summary: "六界風雲變幻，天下英雄薈萃。一名普通少年因機緣巧合得到上古神劍，從此踏上修仙之路，在危機四伏的世界中逐漸成長，最終成為守護世界和平的強者。",
-    lastUpdated: "2025-04-30",
+    lastUpdated: "2025-05-05",
     isNew: false,
     isHot: true,
-    isFeatured: true
+    isFeatured: true,
+    type: "仙俠"
   },
   {
     id: "2",
@@ -61,14 +67,15 @@ const mockNovels: Novel[] = [
     coverImage: "https://source.unsplash.com/random/300x400/?city,night",
     tags: ["都市", "修真", "都市異能"],
     rating: 4.6,
-    chapters: 245,
+    chapters: CHAPTERS_COUNT,
     views: 423651,
     likes: 32541,
     summary: "在繁華都市中隱藏著無數不為人知的秘密。年輕醫生林風意外獲得古老醫術傳承，能夠看到常人無法看到的事物，從此踏上驚險刺激的都市修真之旅。",
-    lastUpdated: "2025-05-01",
+    lastUpdated: "2025-05-05",
     isNew: false,
     isHot: true,
-    isFeatured: false
+    isFeatured: false,
+    type: "都市"
   },
   {
     id: "3",
@@ -77,14 +84,15 @@ const mockNovels: Novel[] = [
     coverImage: "https://source.unsplash.com/random/300x400/?space",
     tags: ["科幻", "未來", "星際"],
     rating: 4.5,
-    chapters: 78,
+    chapters: CHAPTERS_COUNT,
     views: 305687,
     likes: 24789,
     summary: "2199年，人類已經殖民多個星系。當一支神秘外星艦隊出現在太陽系邊緣，年輕艦長林宇和他的船員必須面對人類有史以來最大的威脅。",
-    lastUpdated: "2025-05-02",
+    lastUpdated: "2025-05-05",
     isNew: true,
     isHot: false,
-    isFeatured: true
+    isFeatured: true,
+    type: "科幻"
   },
   {
     id: "4",
@@ -93,14 +101,15 @@ const mockNovels: Novel[] = [
     coverImage: "https://source.unsplash.com/random/300x400/?dark,forest",
     tags: ["玄幻", "獵魔", "冒險"],
     rating: 4.7,
-    chapters: 156,
+    chapters: CHAPTERS_COUNT,
     views: 387452,
     likes: 29874,
     summary: "在一個魔物肆虐的世界中，獵魔人艾爾文憑藉祖傳的獵魔技藝和智慧，與各種強大的魔物周旋。在獵殺魔物的過程中，他逐漸揭開了魔物出現背後的驚天陰謀。",
-    lastUpdated: "2025-05-03",
+    lastUpdated: "2025-05-05",
     isNew: true,
     isHot: true,
-    isFeatured: false
+    isFeatured: false,
+    type: "奇幻"
   },
   {
     id: "5",
@@ -109,14 +118,15 @@ const mockNovels: Novel[] = [
     coverImage: "https://source.unsplash.com/random/300x400/?dragon",
     tags: ["魔法", "奇幻", "冒險"],
     rating: 4.4,
-    chapters: 92,
+    chapters: CHAPTERS_COUNT,
     views: 254789,
     likes: 18965,
     summary: "少年安德魯在一次意外中發現自己擁有罕見的龍語魔法天賦，能夠與傳說中的龍族溝通。在魔法師學院的學習過程中，他發現了一個關於龍族滅絕的驚人秘密。",
-    lastUpdated: "2025-05-01",
+    lastUpdated: "2025-05-05",
     isNew: false,
     isHot: false,
-    isFeatured: true
+    isFeatured: true,
+    type: "奇幻"
   },
 ];
 
@@ -145,20 +155,50 @@ const NovelSystem = () => {
   const [readingMode, setReadingMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>(mockNovels);
+  const [novelTypes, setNovelTypes] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [isInMaintenance, setIsInMaintenance] = useState(false);
   
-  // Filter novels based on search term
+  // Extract all novel types
   useEffect(() => {
+    const types = Array.from(new Set(mockNovels.map(novel => novel.type)));
+    setNovelTypes(types);
+  }, []);
+  
+  // Check maintenance time
+  useEffect(() => {
+    const checkMaintenanceSchedule = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // 每天晚上6點到晚上8點進行維護
+      const inMaintenance = hour >= 18 && hour < 20;
+      setIsInMaintenance(inMaintenance);
+    };
+    
+    checkMaintenanceSchedule();
+    const interval = setInterval(checkMaintenanceSchedule, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Filter novels based on search term and selected type
+  useEffect(() => {
+    let filtered = mockNovels;
+    
     if (searchTerm) {
-      const filtered = mockNovels.filter(
+      filtered = filtered.filter(
         novel => novel.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                 novel.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 novel.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       );
-      setFilteredNovels(filtered);
-    } else {
-      setFilteredNovels(mockNovels);
     }
-  }, [searchTerm]);
+    
+    if (selectedType) {
+      filtered = filtered.filter(novel => novel.type === selectedType);
+    }
+    
+    setFilteredNovels(filtered);
+  }, [searchTerm, selectedType]);
   
   const handleSelectNovel = (novel: Novel) => {
     setSelectedNovel(novel);
@@ -190,7 +230,9 @@ const NovelSystem = () => {
   
   // Format number for display
   const formatNumber = (num: number) => {
-    if (num >= 10000) {
+    if (num >= 100000000) {
+      return (num / 100000000).toFixed(0) + '億';
+    } else if (num >= 10000) {
       return (num / 10000).toFixed(1) + '萬';
     }
     return num.toString();
@@ -198,245 +240,222 @@ const NovelSystem = () => {
 
   return (
     <MainLayout showBackButton>
-      <div className="flex flex-col gap-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-3xl font-bold tracking-tight">小說系統</h1>
-          </div>
+      {isInMaintenance ? (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">系統維護中</h1>
+          <p className="text-lg text-muted-foreground mb-4">
+            系統目前處於定期維護時間（每天晚上6點到晚上8點），期間小說系統功能暫時無法使用。
+          </p>
+          <p className="text-muted-foreground">
+            請於維護時間結束後再次訪問。感謝您的理解與支持。
+          </p>
         </div>
-
-        {readingMode && selectedChapter ? (
-          // Reading mode - display chapter content
-          <Card className="bg-white dark:bg-gray-950">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <Button variant="ghost" size="sm" onClick={handleBackToNovel}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  返回目錄
-                </Button>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm">
-                    <BookmarkIcon className="h-4 w-4 mr-2" />
-                    加入書籤
-                  </Button>
-                </div>
-              </div>
-              <div className="text-center">
-                <CardTitle>{selectedChapter.title}</CardTitle>
-                {selectedNovel && (
-                  <CardDescription>{selectedNovel.title} · {selectedNovel.author}</CardDescription>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[60vh] rounded-md p-4">
-                <div className="prose dark:prose-invert max-w-none">
-                  {selectedChapter.content.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4 text-lg leading-relaxed">{paragraph}</p>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" disabled={selectedChapter.id === mockChapters[0].id}>
-                上一章
+      ) : (
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                <p>觀看次數: {formatNumber(selectedChapter.views)}</p>
-                <p>發布日期: {selectedChapter.publishDate}</p>
-              </div>
-              <Button variant="outline" disabled={selectedChapter.id === mockChapters[mockChapters.length - 1].id}>
-                下一章
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : selectedNovel ? (
-          // Novel detail view
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="md:col-span-1">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="relative">
-                      <img 
-                        src={selectedNovel.coverImage} 
-                        alt={selectedNovel.title}
-                        className="w-full max-w-xs rounded-lg shadow-md object-cover aspect-[3/4]"
-                      />
-                      {selectedNovel.isNew && (
-                        <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
-                      )}
-                      {selectedNovel.isHot && (
-                        <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <Button 
-                        className="w-full mb-2" 
-                        onClick={() => handleStartReading(selectedNovel)}
-                      >
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        開始閱讀
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={handleBackToList}
-                      >
-                        返回列表
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{selectedNovel.title}</CardTitle>
-                  <CardDescription>作者: {selectedNovel.author}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                      {selectedNovel.tags.map(tag => (
-                        <Badge key={tag} variant="secondary">{tag}</Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-4">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
-                        <span>{selectedNovel.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{selectedNovel.chapters}章</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        <span>{formatNumber(selectedNovel.views)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ThumbsUp className="h-4 w-4" />
-                        <span>{formatNumber(selectedNovel.likes)}</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium mb-2">內容簡介</h3>
-                      <p className="text-muted-foreground">{selectedNovel.summary}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium mb-2">最近更新</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{selectedNovel.lastUpdated}</span>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div>
-                      <h3 className="font-medium mb-4">章節列表</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {mockChapters.map(chapter => (
-                          <Button 
-                            key={chapter.id} 
-                            variant="outline" 
-                            className="justify-start"
-                            onClick={() => handleSelectChapter(chapter)}
-                          >
-                            {chapter.title}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <h1 className="text-3xl font-bold tracking-tight">小說系統</h1>
             </div>
           </div>
-        ) : (
-          // Novel list view
-          <>
-            <div className="mb-4">
-              <Input 
-                placeholder="搜尋小說名稱、作者或標籤..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-            
-            <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">全部</TabsTrigger>
-                <TabsTrigger value="featured">精選</TabsTrigger>
-                <TabsTrigger value="new">最新</TabsTrigger>
-                <TabsTrigger value="hot">熱門</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="mt-0">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredNovels.map((novel) => (
-                    <Card key={novel.id} className="overflow-hidden">
-                      <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
+
+          {readingMode && selectedChapter ? (
+            // Reading mode - display chapter content
+            <Card className="bg-white dark:bg-gray-950">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <Button variant="ghost" size="sm" onClick={handleBackToNovel}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    返回目錄
+                  </Button>
+                  <div className="flex space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <BookmarkIcon className="h-4 w-4 mr-2" />
+                      加入書籤
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <CardTitle>{selectedChapter.title}</CardTitle>
+                  {selectedNovel && (
+                    <CardDescription>{selectedNovel.title} · {selectedNovel.author}</CardDescription>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[60vh] rounded-md p-4">
+                  <div className="prose dark:prose-invert max-w-none">
+                    {selectedChapter.content.split('\n\n').map((paragraph, index) => (
+                      <p key={index} className="mb-4 text-lg leading-relaxed">{paragraph}</p>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" disabled={selectedChapter.id === mockChapters[0].id}>
+                  上一章
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  <p>觀看次數: {formatNumber(selectedChapter.views)}</p>
+                  <p>發布日期: {selectedChapter.publishDate}</p>
+                </div>
+                <Button variant="outline" disabled={selectedChapter.id === mockChapters[mockChapters.length - 1].id}>
+                  下一章
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : selectedNovel ? (
+            // Novel detail view
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="md:col-span-1">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="relative">
                         <img 
-                          src={novel.coverImage} 
-                          alt={novel.title}
-                          className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
+                          src={selectedNovel.coverImage} 
+                          alt={selectedNovel.title}
+                          className="w-full max-w-xs rounded-lg shadow-md object-cover aspect-[3/4]"
                         />
-                        {novel.isNew && (
+                        {selectedNovel.isNew && (
                           <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
                         )}
-                        {novel.isHot && (
+                        {selectedNovel.isHot && (
                           <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                         )}
                       </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
-                          {novel.title}
-                        </CardTitle>
-                        <CardDescription>{novel.author}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {novel.tags.map(tag => (
-                            <Badge key={tag} variant="secondary">{tag}</Badge>
-                          ))}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground gap-4">
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                            {novel.rating}
-                          </div>
-                          <div className="flex items-center">
-                            <BookOpen className="h-3 w-3 mr-1" />
-                            {novel.chapters}章
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button className="w-full" onClick={() => handleStartReading(novel)}>
+                      <div className="text-center">
+                        <Button 
+                          className="w-full mb-2" 
+                          onClick={() => handleStartReading(selectedNovel)}
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
                           開始閱讀
                         </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={handleBackToList}
+                        >
+                          返回列表
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
               
-              <TabsContent value="featured" className="mt-0">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredNovels
-                    .filter(novel => novel.isFeatured)
-                    .map((novel) => (
+              <div className="md:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{selectedNovel.title}</CardTitle>
+                    <CardDescription>作者: {selectedNovel.author}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">{selectedNovel.type}</Badge>
+                        {selectedNovel.tags.map(tag => (
+                          <Badge key={tag} variant="secondary">{tag}</Badge>
+                        ))}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-4">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span>{selectedNovel.rating}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{formatNumber(selectedNovel.chapters)}章</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4" />
+                          <span>{formatNumber(selectedNovel.views)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ThumbsUp className="h-4 w-4" />
+                          <span>{formatNumber(selectedNovel.likes)}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium mb-2">內容簡介</h3>
+                        <p className="text-muted-foreground">{selectedNovel.summary}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium mb-2">最近更新</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{selectedNovel.lastUpdated}</span>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div>
+                        <h3 className="font-medium mb-4">章節列表</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {mockChapters.map(chapter => (
+                            <Button 
+                              key={chapter.id} 
+                              variant="outline" 
+                              className="justify-start"
+                              onClick={() => handleSelectChapter(chapter)}
+                            >
+                              {chapter.title}
+                            </Button>
+                          ))}
+                          <p className="text-sm text-muted-foreground col-span-2 mt-2">
+                            本書共{formatNumber(selectedNovel.chapters)}章，持續更新中...
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : (
+            // Novel list view
+            <>
+              <div className="flex flex-col md:flex-row gap-4 items-end mb-4">
+                <div className="w-full md:w-1/2">
+                  <Input 
+                    placeholder="搜尋小說名稱、作者或標籤..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="w-full md:w-1/3">
+                  <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="選擇小說類型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">全部類型</SelectItem>
+                      {novelTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Tabs defaultValue="all">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="all">全部</TabsTrigger>
+                  <TabsTrigger value="featured">精選</TabsTrigger>
+                  <TabsTrigger value="new">最新</TabsTrigger>
+                  <TabsTrigger value="hot">熱門</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all" className="mt-0">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredNovels.map((novel) => (
                       <Card key={novel.id} className="overflow-hidden">
                         <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
                           <img 
@@ -459,6 +478,7 @@ const NovelSystem = () => {
                         </CardHeader>
                         <CardContent className="pb-2">
                           <div className="flex flex-wrap gap-2 mb-2">
+                            <Badge variant="outline">{novel.type}</Badge>
                             {novel.tags.map(tag => (
                               <Badge key={tag} variant="secondary">{tag}</Badge>
                             ))}
@@ -470,7 +490,7 @@ const NovelSystem = () => {
                             </div>
                             <div className="flex items-center">
                               <BookOpen className="h-3 w-3 mr-1" />
-                              {novel.chapters}章
+                              {formatNumber(novel.chapters)}章
                             </div>
                           </div>
                         </CardContent>
@@ -481,112 +501,168 @@ const NovelSystem = () => {
                         </CardFooter>
                       </Card>
                     ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="new" className="mt-0">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredNovels
-                    .filter(novel => novel.isNew)
-                    .map((novel) => (
-                      <Card key={novel.id} className="overflow-hidden">
-                        <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
-                          <img 
-                            src={novel.coverImage} 
-                            alt={novel.title}
-                            className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
-                          />
-                          <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
-                          {novel.isHot && (
-                            <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
-                          )}
-                        </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
-                            {novel.title}
-                          </CardTitle>
-                          <CardDescription>{novel.author}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {novel.tags.map(tag => (
-                              <Badge key={tag} variant="secondary">{tag}</Badge>
-                            ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="featured" className="mt-0">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredNovels
+                      .filter(novel => novel.isFeatured)
+                      .map((novel) => (
+                        <Card key={novel.id} className="overflow-hidden">
+                          <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
+                            <img 
+                              src={novel.coverImage} 
+                              alt={novel.title}
+                              className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
+                            />
+                            {novel.isNew && (
+                              <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
+                            )}
+                            {novel.isHot && (
+                              <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
+                            )}
                           </div>
-                          <div className="flex items-center text-sm text-muted-foreground gap-4">
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                              {novel.rating}
+                          <CardHeader className="pb-2">
+                            <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
+                              {novel.title}
+                            </CardTitle>
+                            <CardDescription>{novel.author}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <Badge variant="outline">{novel.type}</Badge>
+                              {novel.tags.map(tag => (
+                                <Badge key={tag} variant="secondary">{tag}</Badge>
+                              ))}
                             </div>
-                            <div className="flex items-center">
-                              <BookOpen className="h-3 w-3 mr-1" />
-                              {novel.chapters}章
+                            <div className="flex items-center text-sm text-muted-foreground gap-4">
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                                {novel.rating}
+                              </div>
+                              <div className="flex items-center">
+                                <BookOpen className="h-3 w-3 mr-1" />
+                                {formatNumber(novel.chapters)}章
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button className="w-full" onClick={() => handleStartReading(novel)}>
-                            開始閱讀
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="hot" className="mt-0">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredNovels
-                    .filter(novel => novel.isHot)
-                    .map((novel) => (
-                      <Card key={novel.id} className="overflow-hidden">
-                        <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
-                          <img 
-                            src={novel.coverImage} 
-                            alt={novel.title}
-                            className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
-                          />
-                          {novel.isNew && (
+                          </CardContent>
+                          <CardFooter>
+                            <Button className="w-full" onClick={() => handleStartReading(novel)}>
+                              開始閱讀
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="new" className="mt-0">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredNovels
+                      .filter(novel => novel.isNew)
+                      .map((novel) => (
+                        <Card key={novel.id} className="overflow-hidden">
+                          <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
+                            <img 
+                              src={novel.coverImage} 
+                              alt={novel.title}
+                              className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
+                            />
                             <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
-                          )}
-                          <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
-                        </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
-                            {novel.title}
-                          </CardTitle>
-                          <CardDescription>{novel.author}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {novel.tags.map(tag => (
-                              <Badge key={tag} variant="secondary">{tag}</Badge>
-                            ))}
+                            {novel.isHot && (
+                              <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
+                            )}
                           </div>
-                          <div className="flex items-center text-sm text-muted-foreground gap-4">
-                            <div className="flex items-center">
-                              <Star className="h-3 w-3 text-yellow-500 mr-1" />
-                              {novel.rating}
+                          <CardHeader className="pb-2">
+                            <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
+                              {novel.title}
+                            </CardTitle>
+                            <CardDescription>{novel.author}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <Badge variant="outline">{novel.type}</Badge>
+                              {novel.tags.map(tag => (
+                                <Badge key={tag} variant="secondary">{tag}</Badge>
+                              ))}
                             </div>
-                            <div className="flex items-center">
-                              <BookOpen className="h-3 w-3 mr-1" />
-                              {novel.chapters}章
+                            <div className="flex items-center text-sm text-muted-foreground gap-4">
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                                {novel.rating}
+                              </div>
+                              <div className="flex items-center">
+                                <BookOpen className="h-3 w-3 mr-1" />
+                                {formatNumber(novel.chapters)}章
+                              </div>
                             </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button className="w-full" onClick={() => handleStartReading(novel)}>
+                              開始閱讀
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="hot" className="mt-0">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredNovels
+                      .filter(novel => novel.isHot)
+                      .map((novel) => (
+                        <Card key={novel.id} className="overflow-hidden">
+                          <div className="relative aspect-[3/4] overflow-hidden" onClick={() => handleSelectNovel(novel)}>
+                            <img 
+                              src={novel.coverImage} 
+                              alt={novel.title}
+                              className="w-full h-full object-cover transition-transform hover:scale-105 cursor-pointer"
+                            />
+                            {novel.isNew && (
+                              <Badge className="absolute top-2 right-2 bg-green-500">最新</Badge>
+                            )}
+                            <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
                           </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button className="w-full" onClick={() => handleStartReading(novel)}>
-                            開始閱讀
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
-      </div>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="cursor-pointer hover:text-primary" onClick={() => handleSelectNovel(novel)}>
+                              {novel.title}
+                            </CardTitle>
+                            <CardDescription>{novel.author}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              <Badge variant="outline">{novel.type}</Badge>
+                              {novel.tags.map(tag => (
+                                <Badge key={tag} variant="secondary">{tag}</Badge>
+                              ))}
+                            </div>
+                            <div className="flex items-center text-sm text-muted-foreground gap-4">
+                              <div className="flex items-center">
+                                <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                                {novel.rating}
+                              </div>
+                              <div className="flex items-center">
+                                <BookOpen className="h-3 w-3 mr-1" />
+                                {formatNumber(novel.chapters)}章
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button className="w-full" onClick={() => handleStartReading(novel)}>
+                              開始閱讀
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </div>
+      )}
     </MainLayout>
   );
 };

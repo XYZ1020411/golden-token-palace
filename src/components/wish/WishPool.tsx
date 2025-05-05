@@ -37,7 +37,7 @@ const initialWishes = [
   {
     id: "4",
     username: "系統管理員",
-    content: "小說章節已更新至1000億集",
+    content: "小說章節已更新至1億集",
     status: "approved",
     votes: 999,
     createdAt: new Date().toISOString()
@@ -52,18 +52,17 @@ export const WishPool = () => {
   // 检查是否在维护时间内
   const isInMaintenanceWindow = () => {
     const now = new Date();
-    const day = now.getDay(); // 0 is Sunday
     const hour = now.getHours();
     
-    // 檢查是否為週日(0)且時間在15:00-16:00之間
-    return day === 0 && hour >= 15 && hour < 16;
+    // 每天晚上6點到晚上8點進行維護
+    return hour >= 18 && hour < 20;
   };
 
   const handleSubmitWish = () => {
     if (isInMaintenanceWindow()) {
       toast({
         title: "系統維護中",
-        description: "系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。",
+        description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間許願池功能暫時無法使用。",
         variant: "destructive"
       });
       return;
@@ -102,7 +101,7 @@ export const WishPool = () => {
     if (isInMaintenanceWindow()) {
       toast({
         title: "系統維護中",
-        description: "系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。",
+        description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間許願池功能暫時無法使用。",
         variant: "destructive"
       });
       return;

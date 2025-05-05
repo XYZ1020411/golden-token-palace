@@ -21,11 +21,10 @@ const WishPool = () => {
   useEffect(() => {
     const checkMaintenanceSchedule = () => {
       const now = new Date();
-      const day = now.getDay(); // 0 is Sunday
       const hour = now.getHours();
       
-      // 檢查是否為週日(0)且時間在15:00-16:00之間
-      const inMaintenance = day === 0 && hour >= 15 && hour < 16;
+      // 每天晚上6點到晚上8點進行維護
+      const inMaintenance = hour >= 18 && hour < 20;
       setIsInMaintenance(inMaintenance);
     };
     
@@ -42,7 +41,7 @@ const WishPool = () => {
         <div className="flex flex-col items-center justify-center p-8 text-center">
           <h1 className="text-2xl font-bold mb-4">系統維護中</h1>
           <p className="text-lg text-muted-foreground mb-4">
-            系統目前處於定期維護時間（每週日下午3點至4點），期間許願池功能暫時無法使用。
+            系統目前處於定期維護時間（每天晚上6點到晚上8點），期間許願池功能暫時無法使用。
           </p>
           <p className="text-muted-foreground">
             請於維護時間結束後再次訪問。感謝您的理解與支持。
