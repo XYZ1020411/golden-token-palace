@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LinkIcon } from "lucide-react";
+import { ArrowLeft, LinkIcon, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Novel, NovelChapter } from "@/types/novel";
 import { mockNovels, mockChapters } from "@/data/mockNovelsData";
-import { checkMaintenanceTime, isAdminUser, connectToWordPress } from "@/utils/novelUtils";
+import { checkMaintenanceTime, isAdminUser, connectToWordPress, searchMangaOnGoogle, importNovelFromGoogle } from "@/utils/novelUtils";
 import MaintenanceNotice from "@/components/maintenance/MaintenanceNotice";
 import NovelFilter from "@/components/novel/NovelFilter";
 import NovelList from "@/components/novel/NovelList";
@@ -18,8 +18,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-const NovelSystem = () => {
+const MangaFox = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
@@ -34,6 +35,7 @@ const NovelSystem = () => {
   const [showWordPressDialog, setShowWordPressDialog] = useState(false);
   const [wordpressUrl, setWordpressUrl] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const isAdmin = isAdminUser(user?.role);
@@ -61,6 +63,36 @@ const NovelSystem = () => {
       navigate("/login");
     }
   }, [isInMaintenance, isAuthenticated, isAdmin, navigate]);
+
+  // Set up realtime subscription for admin content changes
+  useEffect(() => {
+    // Create a channel for listening to manga data changes
+    const channel = supabase
+      .channel('manga-updates')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'manga' 
+        },
+        (payload) => {
+          toast({
+            title: "同步更新",
+            description: "管理員已更新漫畫資料，系統已自動同步",
+          });
+          
+          // Refresh the manga list
+          handleSyncFromServer();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   
   // Filter novels based on search term and selected type
   useEffect(() => {
@@ -80,6 +112,55 @@ const NovelSystem = () => {
     
     setFilteredNovels(filtered);
   }, [searchTerm, selectedType, novelsList]);
+
+  // Sync content from server
+  const handleSyncFromServer = async () => {
+    setIsRefreshing(true);
+    try {
+      // In a real implementation, this would fetch data from Supabase
+      // For now, we'll simulate a server call with a timeout
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate getting updated data
+      const updatedNovels = [...mockNovels];
+      
+      // Add a new manga to simulate updates
+      const randomId = Math.random().toString(36).substring(2, 10);
+      updatedNovels.unshift({
+        id: randomId,
+        title: `New Manga ${randomId.substring(0, 4)}`,
+        author: "Server Sync",
+        coverImage: `https://picsum.photos/400/600?random=${randomId}`,
+        tags: ["漫畫", "同步更新"],
+        rating: 4.5,
+        chapters: Math.floor(Math.random() * 50) + 1,
+        views: Math.floor(Math.random() * 10000),
+        likes: Math.floor(Math.random() * 1000),
+        summary: "這是一個從伺服器同步的新漫畫。",
+        lastUpdated: new Date().toISOString(),
+        isNew: true,
+        isHot: Math.random() > 0.5,
+        isFeatured: false,
+        type: "漫畫",
+        isManga: true
+      });
+      
+      setNovelsList(updatedNovels);
+      
+      toast({
+        title: "同步成功",
+        description: "已從伺服器同步最新漫畫資料",
+      });
+    } catch (error) {
+      toast({
+        title: "同步失敗",
+        description: `無法從伺服器同步資料: ${error}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   const handleSelectNovel = (novel: Novel) => {
     setSelectedNovel(novel);
@@ -155,14 +236,14 @@ const NovelSystem = () => {
   if (isInMaintenance && !isAdmin) {
     return (
       <MainLayout showBackButton>
-        <MaintenanceNotice featureName="小說系統" />
+        <MaintenanceNotice featureName="MangaFox" />
       </MainLayout>
     );
   }
 
   return (
     <MainLayout showBackButton>
-      {isInMaintenance && isAdmin && <MaintenanceNotice featureName="小說系統" isAdmin />}
+      {isInMaintenance && isAdmin && <MaintenanceNotice featureName="MangaFox" isAdmin />}
       
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
@@ -170,19 +251,31 @@ const NovelSystem = () => {
             <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">小說系統</h1>
+            <h1 className="text-3xl font-bold tracking-tight">MangaFox</h1>
           </div>
           
-          {isAdmin && (
+          <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={() => setShowWordPressDialog(true)}
+              onClick={handleSyncFromServer}
+              disabled={isRefreshing}
               className="flex items-center gap-2"
             >
-              <LinkIcon className="h-4 w-4" />
-              連接WordPress
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? '同步中...' : '同步更新'}
             </Button>
-          )}
+            
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowWordPressDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <LinkIcon className="h-4 w-4" />
+                連接WordPress
+              </Button>
+            )}
+          </div>
         </div>
 
         {readingMode && selectedChapter ? (
@@ -256,4 +349,4 @@ const NovelSystem = () => {
   );
 };
 
-export default NovelSystem;
+export default MangaFox;

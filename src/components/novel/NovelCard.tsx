@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, BookOpen } from "lucide-react";
+import { Star, BookOpen, RefreshCw, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Novel } from "@/types/novel";
 import { formatNumber } from "@/utils/novelUtils";
@@ -17,6 +17,20 @@ interface NovelCardProps {
 const NovelCard: React.FC<NovelCardProps> = ({ novel, onSelect, onStartReading }) => {
   const isMobile = useIsMobile();
 
+  // Calculate how recent the update is
+  const getUpdateStatus = () => {
+    const lastUpdated = new Date(novel.lastUpdated);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60));
+    
+    if (diffHours < 24) {
+      return `${diffHours}小時前更新`;
+    } else {
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays}天前更新`;
+    }
+  };
+
   return (
     <Card className="overflow-hidden">
       <div className="relative aspect-[3/4] overflow-hidden" onClick={() => onSelect(novel)}>
@@ -30,6 +44,9 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, onSelect, onStartReading }
         )}
         {novel.isHot && (
           <Badge className="absolute top-10 right-2 bg-red-500">熱門</Badge>
+        )}
+        {novel.isManga && (
+          <Badge className="absolute top-2 left-2 bg-blue-500">漫畫</Badge>
         )}
       </div>
       <CardHeader className={`${isMobile ? "p-3" : "pb-2"}`}>
@@ -54,6 +71,10 @@ const NovelCard: React.FC<NovelCardProps> = ({ novel, onSelect, onStartReading }
             <BookOpen className="h-3 w-3 mr-1" />
             {formatNumber(novel.chapters)}章
           </div>
+        </div>
+        <div className="flex items-center text-xs text-muted-foreground mt-2">
+          <Clock className="h-3 w-3 mr-1" />
+          {getUpdateStatus()}
         </div>
       </CardContent>
       <CardFooter className={isMobile ? "p-3 pt-0" : undefined}>

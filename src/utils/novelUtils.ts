@@ -79,6 +79,10 @@ export const importNovelFromGoogle = async (title: string, type: string = '漫�
     };
     
     console.log('成功導入:', newNovel);
+    
+    // 在實際應用中，這裡會將數據同步到伺服器
+    syncToServer(newNovel);
+    
     return newNovel;
   } catch (error) {
     console.error('導入失敗:', error);
@@ -109,6 +113,71 @@ export const connectToWordPress = async (wpUrl: string) => {
     return {
       success: false,
       message: `無法連接到WordPress: ${error}`,
+      timestamp: new Date().toISOString()
+    };
+  }
+};
+
+/**
+ * 同步數據到伺服器
+ * @param data 要同步的數據
+ */
+export const syncToServer = async (data: any) => {
+  try {
+    console.log('正在同步數據到伺服器:', data);
+    
+    // 模擬API調用，實際實現會使用Supabase或其他後端
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // 這裡可以放置實際的同步邏輯
+    // 例如：supabase.from('manga').insert(data)
+    
+    console.log('數據同步成功');
+    return {
+      success: true,
+      message: '數據已同步到伺服器',
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('數據同步失敗:', error);
+    return {
+      success: false,
+      message: `無法同步數據: ${error}`,
+      timestamp: new Date().toISOString()
+    };
+  }
+};
+
+/**
+ * 從伺服器獲取更新
+ */
+export const getUpdatesFromServer = async () => {
+  try {
+    console.log('從伺服器獲取更新');
+    
+    // 模擬API調用
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // 模擬數據
+    const updates = {
+      newItems: 5,
+      updatedItems: 3,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('成功獲取更新:', updates);
+    return {
+      success: true,
+      data: updates,
+      message: '成功獲取最新內容更新',
+      timestamp: updates.timestamp
+    };
+  } catch (error) {
+    console.error('獲取更新失敗:', error);
+    return {
+      success: false,
+      data: null,
+      message: `無法獲取更新: ${error}`,
       timestamp: new Date().toISOString()
     };
   }

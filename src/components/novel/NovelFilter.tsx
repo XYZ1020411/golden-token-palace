@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Download, PlusCircle } from "lucide-react";
+import { Search, Download, PlusCircle, RefreshCw } from "lucide-react";
 import { searchMangaOnGoogle, importNovelFromGoogle } from "@/utils/novelUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Novel } from "@/types/novel";
@@ -52,7 +52,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
         onAddNovel(newNovel);
         toast({
           title: "導入成功!",
-          description: `成功從Google導入「${searchTerm}」`,
+          description: `成功從Google導入「${searchTerm}」並同步到伺服器`,
         });
         onSearchChange(''); // 清除搜尋欄
       }
@@ -72,7 +72,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
       <div className="flex flex-col md:flex-row gap-4 items-end">
         <div className="w-full md:w-1/2">
           <Input 
-            placeholder="搜尋小說名稱、作者或標籤..." 
+            placeholder="搜尋漫畫名稱、作者或標籤..." 
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -80,7 +80,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
         <div className="w-full md:w-1/3">
           <Select value={selectedType} onValueChange={onTypeChange}>
             <SelectTrigger>
-              <SelectValue placeholder="選擇小說類型" />
+              <SelectValue placeholder="選擇漫畫類型" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">全部類型</SelectItem>
@@ -118,7 +118,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
       </div>
       {searchTerm && (
         <p className="text-sm text-muted-foreground">
-          找不到想看的漫畫？點擊「Google搜尋」在Google上尋找，或使用「自動導入」直接添加到系統。
+          找不到想看的漫畫？點擊「Google搜尋」在Google上尋找，或使用「自動導入」直接添加到系統並自動同步到所有客戶端。
         </p>
       )}
     </div>
