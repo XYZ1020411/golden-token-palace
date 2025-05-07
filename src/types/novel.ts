@@ -15,6 +15,7 @@ export interface Novel {
   isHot: boolean;
   isFeatured: boolean;
   type: string;
+  isManga?: boolean; // Flag to indicate if this is a manga
 }
 
 export interface NovelChapter {
@@ -24,3 +25,4 @@ export interface NovelChapter {
   publishDate: string;
   views: number;
 }
+
