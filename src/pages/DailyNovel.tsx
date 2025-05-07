@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Book, Calendar, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateNovelChapter } from "@/services/novelService";
-import { useNavigate } from "react-router-dom";
 
 interface Chapter {
   id: number;

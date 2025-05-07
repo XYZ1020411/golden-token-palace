@@ -74,16 +74,26 @@ const MangaFox = () => {
         { 
           event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
           schema: 'public',
-          table: 'manga' 
+          table: 'manga_notifications' 
         },
         (payload) => {
-          toast({
-            title: "同步更新",
-            description: "管理員已更新漫畫資料，系統已自動同步",
-          });
-          
-          // Refresh the manga list
-          handleSyncFromServer();
+          try {
+            if (payload.eventType === 'INSERT') {
+              const notification = payload.new;
+              
+              toast({
+                title: "內容已更新",
+                description: `管理員已${notification.action === 'add' ? '新增' : 
+                              notification.action === 'update' ? '更新' : 
+                              notification.action === 'delete' ? '刪除' : '修改'}漫畫內容`,
+              });
+              
+              // Automatically sync content when admin changes are detected
+              handleSyncFromServer();
+            }
+          } catch (err) {
+            console.error("Error processing realtime update:", err);
+          }
         }
       )
       .subscribe();
@@ -118,18 +128,56 @@ const MangaFox = () => {
     setIsRefreshing(true);
     try {
       // In a real implementation, this would fetch data from Supabase
-      // For now, we'll simulate a server call with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data: mangaData, error } = await supabase
+        .from('manga')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      // Simulate getting updated data
+      if (mangaData && mangaData.length > 0) {
+        // Transform database manga to the Novel format
+        const updatedNovels = mangaData.map(item => ({
+          id: item.id,
+          title: item.title,
+          author: item.author || "未知作者",
+          coverImage: item.cover_url || `https://picsum.photos/400/600?random=${item.id}`,
+          tags: item.tags ? JSON.parse(item.tags) : ["漫畫"],
+          rating: item.rating || 4.5,
+          chapters: item.chapter_count || Math.floor(Math.random() * 50) + 1,
+          views: item.view_count || Math.floor(Math.random() * 10000),
+          likes: item.like_count || Math.floor(Math.random() * 1000),
+          summary: item.summary || "暫無簡介",
+          lastUpdated: item.updated_at,
+          isNew: new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000,
+          isHot: item.is_hot || false,
+          isFeatured: item.is_featured || false,
+          type: item.type || "漫畫",
+          isManga: item.is_manga !== undefined ? item.is_manga : true
+        }));
+        
+        setNovelsList(updatedNovels);
+      } else {
+        // If no manga data in database, use mock data
+        setNovelsList([...mockNovels]);
+      }
+      
+      toast({
+        title: "同步成功",
+        description: "已從伺服器同步最新漫畫資料",
+      });
+    } catch (error) {
+      console.error("Sync error:", error);
+      
+      // Fallback to mock data on error
       const updatedNovels = [...mockNovels];
       
-      // Add a new manga to simulate updates
+      // Add a new mock manga to simulate updates
       const randomId = Math.random().toString(36).substring(2, 10);
       updatedNovels.unshift({
         id: randomId,
-        title: `New Manga ${randomId.substring(0, 4)}`,
-        author: "Server Sync",
+        title: `新漫畫 ${randomId.substring(0, 4)}`,
+        author: "系統同步",
         coverImage: `https://picsum.photos/400/600?random=${randomId}`,
         tags: ["漫畫", "同步更新"],
         rating: 4.5,
@@ -148,13 +196,8 @@ const MangaFox = () => {
       setNovelsList(updatedNovels);
       
       toast({
-        title: "同步成功",
-        description: "已從伺服器同步最新漫畫資料",
-      });
-    } catch (error) {
-      toast({
         title: "同步失敗",
-        description: `無法從伺服器同步資料: ${error}`,
+        description: `無法從伺服器同步資料，使用本地資料`,
         variant: "destructive"
       });
     } finally {
@@ -190,8 +233,47 @@ const MangaFox = () => {
     setSelectedChapter(null);
   };
 
-  const handleAddNovel = (novel: Novel) => {
+  const handleAddNovel = async (novel: Novel) => {
+    // Add to local state first for immediate feedback
     setNovelsList(prev => [novel, ...prev]);
+    
+    try {
+      // Then sync to Supabase for persistence and realtime updates
+      const { error } = await supabase
+        .from('manga')
+        .insert([{
+          id: novel.id,
+          title: novel.title,
+          author: novel.author,
+          cover_url: novel.coverImage,
+          tags: JSON.stringify(novel.tags),
+          rating: novel.rating,
+          chapter_count: novel.chapters,
+          view_count: novel.views,
+          like_count: novel.likes,
+          summary: novel.summary,
+          is_hot: novel.isHot,
+          is_featured: novel.isFeatured,
+          type: novel.type,
+          is_manga: novel.isManga
+        }]);
+        
+      if (error) throw error;
+      
+      // Notify all clients about this change
+      await supabase
+        .from('manga_notifications')
+        .insert([{
+          title: novel.title,
+          action: 'add',
+          data: JSON.stringify(novel),
+          user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
+        }]);
+    } catch (error) {
+      console.error("Error adding novel:", error);
+      // We don't remove from local state even on error
+      // to maintain good UX, but we log the error
+    }
   };
 
   const handleConnectToWordPress = async () => {
@@ -305,6 +387,8 @@ const MangaFox = () => {
               novelTypes={novelTypes}
               isMobile={isMobile}
               onAddNovel={handleAddNovel}
+              onSyncContent={handleSyncFromServer}
+              isSyncing={isRefreshing}
             />
             
             <NovelList 

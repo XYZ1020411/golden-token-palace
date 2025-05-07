@@ -4,12 +4,13 @@ import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Transaction {
+export interface Transaction {
   id: string;
   amount: number;
-  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward";
+  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward" | "transfer" | "gift" | "daily";
   description: string;
   created_at: string;
+  date: string; // Added this field for compatibility
 }
 
 interface WalletContextType {
@@ -21,6 +22,9 @@ interface WalletContextType {
   purchaseItem: (amount: number, description: string) => Promise<boolean>;
   refundItem: (amount: number, description: string) => Promise<boolean>;
   refreshWallet: () => Promise<void>;
+  addTransaction: (transaction: Partial<Transaction>) => Promise<boolean>;
+  transfer: (amount: number, recipient: string, description?: string) => Promise<boolean>;
+  gift: (amount: number, description: string) => Promise<boolean>;
 }
 
 const defaultWalletContext: WalletContextType = {
@@ -32,6 +36,9 @@ const defaultWalletContext: WalletContextType = {
   purchaseItem: async () => false,
   refundItem: async () => false,
   refreshWallet: async () => {},
+  addTransaction: async () => false,
+  transfer: async () => false,
+  gift: async () => false,
 };
 
 const WalletContext = createContext<WalletContextType>(defaultWalletContext);
@@ -58,6 +65,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       type: "deposit" as const,
       description: "初始儲值",
       created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: "2",
@@ -65,6 +73,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       type: "purchase" as const,
       description: "購買高級會員",
       created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: "3",
@@ -72,6 +81,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       type: "deposit" as const,
       description: "儲值優惠活動",
       created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
       id: "4",
@@ -79,6 +89,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       type: "purchase" as const,
       description: "購買高級會員第二個月",
       created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     },
   ];
 
@@ -134,10 +145,11 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       
       const newTransaction: Transaction = {
         id: Math.random().toString(36).substring(2, 11),
-        amount: type === "withdrawal" || type === "purchase" ? -Math.abs(amount) : Math.abs(amount),
+        amount: type === "withdrawal" || type === "purchase" || type === "transfer" ? -Math.abs(amount) : Math.abs(amount),
         type,
         description,
         created_at: new Date().toISOString(),
+        date: new Date().toISOString(),
       };
       
       // Update local state
@@ -149,6 +161,36 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Transaction error:", error);
       toast.error("交易處理失敗");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Direct transaction addition for flexibility
+  const addTransaction = async (transactionData: Partial<Transaction>): Promise<boolean> => {
+    if (!isAuthenticated || !transactionData.amount || !transactionData.type) {
+      return false;
+    }
+
+    setLoading(true);
+    try {
+      const newTransaction: Transaction = {
+        id: transactionData.id || Math.random().toString(36).substring(2, 11),
+        amount: transactionData.amount,
+        type: transactionData.type,
+        description: transactionData.description || "",
+        created_at: transactionData.created_at || new Date().toISOString(),
+        date: transactionData.date || new Date().toISOString(),
+      };
+      
+      // Update local state
+      setTransactions(prev => [newTransaction, ...prev]);
+      setBalance(prev => prev + newTransaction.amount);
+      
+      return true;
+    } catch (error) {
+      console.error("Transaction error:", error);
       return false;
     } finally {
       setLoading(false);
@@ -180,6 +222,20 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     return processTransaction(amount, "refund", description);
   };
 
+  // Add new transfer functionality
+  const transfer = async (amount: number, recipient: string, description?: string): Promise<boolean> => {
+    if (amount > balance) {
+      toast.error("餘額不足");
+      return false;
+    }
+    return processTransaction(amount, "transfer", description || `轉帳 ${amount} 點給 ${recipient}`);
+  };
+
+  // Add gift functionality
+  const gift = async (amount: number, description: string): Promise<boolean> => {
+    return processTransaction(amount, "gift", description);
+  };
+
   // Refresh wallet data
   const refreshWallet = async (): Promise<void> => {
     await loadWalletData();
@@ -194,6 +250,9 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     purchaseItem,
     refundItem,
     refreshWallet,
+    addTransaction,
+    transfer,
+    gift,
   };
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

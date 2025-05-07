@@ -7,6 +7,7 @@ import { Search, PlusCircle, RefreshCw } from "lucide-react";
 import { searchMangaOnGoogle, importNovelFromGoogle } from "@/utils/novelUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Novel } from "@/types/novel";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NovelFilterProps {
   searchTerm: string;
@@ -59,6 +60,18 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
           description: `成功從Google導入「${searchTerm}」並同步到伺服器`,
         });
         onSearchChange(''); // 清除搜尋欄
+
+        // Notify admin changes through Supabase realtime
+        await supabase
+          .from('manga_notifications')
+          .insert([
+            { 
+              title: newNovel.title,
+              action: 'add',
+              data: JSON.stringify(newNovel),
+              user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
+            }
+          ]);
       }
     } catch (error) {
       toast({
