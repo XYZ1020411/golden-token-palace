@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Download, PlusCircle, RefreshCw } from "lucide-react";
+import { Search, PlusCircle, RefreshCw } from "lucide-react";
 import { searchMangaOnGoogle, importNovelFromGoogle } from "@/utils/novelUtils";
 import { useToast } from "@/hooks/use-toast";
 import { Novel } from "@/types/novel";
@@ -16,6 +16,8 @@ interface NovelFilterProps {
   novelTypes: string[];
   isMobile: boolean;
   onAddNovel?: (novel: Novel) => void;
+  onSyncContent?: () => void;
+  isSyncing?: boolean;
 }
 
 const NovelFilter: React.FC<NovelFilterProps> = ({ 
@@ -25,7 +27,9 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
   onTypeChange, 
   novelTypes,
   isMobile,
-  onAddNovel
+  onAddNovel,
+  onSyncContent,
+  isSyncing = false
 }) => {
   const { toast } = useToast();
   const [isImporting, setIsImporting] = useState(false);
@@ -91,6 +95,17 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
           </Select>
         </div>
         <div className="flex gap-2">
+          {onSyncContent && (
+            <Button 
+              variant="outline" 
+              onClick={onSyncContent}
+              disabled={isSyncing}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? '同步中...' : '同步更新'}
+            </Button>
+          )}
           <Button 
             variant="secondary" 
             onClick={handleGoogleSearch}

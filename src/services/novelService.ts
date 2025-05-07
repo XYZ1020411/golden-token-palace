@@ -296,3 +296,26 @@ export const generateNovelChapter = async (
     };
   }
 };
+
+// 實時同步管理員對漫畫/小說內容的更改
+export const setupContentSyncListener = (onContentUpdate: () => void) => {
+  const channel = supabase
+    .channel('manga-updates')
+    .on(
+      'postgres_changes',
+      { 
+        event: '*', 
+        schema: 'public',
+        table: 'manga' 
+      },
+      () => {
+        console.log('管理員更新了漫畫/小說內容，正在同步...');
+        onContentUpdate();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};
