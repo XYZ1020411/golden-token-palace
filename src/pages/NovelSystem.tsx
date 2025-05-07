@@ -4,16 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LinkIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Novel, NovelChapter } from "@/types/novel";
 import { mockNovels, mockChapters } from "@/data/mockNovelsData";
-import { checkMaintenanceTime } from "@/utils/novelUtils";
+import { checkMaintenanceTime, isAdminUser, connectToWordPress } from "@/utils/novelUtils";
 import MaintenanceNotice from "@/components/maintenance/MaintenanceNotice";
 import NovelFilter from "@/components/novel/NovelFilter";
 import NovelList from "@/components/novel/NovelList";
 import NovelDetail from "@/components/novel/NovelDetail";
 import ReadingView from "@/components/novel/ReadingView";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const NovelSystem = () => {
   const { user, isAuthenticated } = useAuth();
@@ -22,17 +26,23 @@ const NovelSystem = () => {
   const [selectedChapter, setSelectedChapter] = useState<NovelChapter | null>(null);
   const [readingMode, setReadingMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [novelsList, setNovelsList] = useState<Novel[]>(mockNovels);
   const [filteredNovels, setFilteredNovels] = useState<Novel[]>(mockNovels);
   const [novelTypes, setNovelTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
   const [isInMaintenance, setIsInMaintenance] = useState(false);
+  const [showWordPressDialog, setShowWordPressDialog] = useState(false);
+  const [wordpressUrl, setWordpressUrl] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const { toast } = useToast();
   const isMobile = useIsMobile();
+  const isAdmin = isAdminUser(user?.role);
   
   // Extract all novel types
   useEffect(() => {
-    const types = Array.from(new Set(mockNovels.map(novel => novel.type)));
+    const types = Array.from(new Set(novelsList.map(novel => novel.type)));
     setNovelTypes(types);
-  }, []);
+  }, [novelsList]);
   
   // Check maintenance time - updated to 6PM-8PM daily
   useEffect(() => {
@@ -45,9 +55,16 @@ const NovelSystem = () => {
     return () => clearInterval(interval);
   }, []);
   
+  // Redirect to login if user is not authenticated and in maintenance (except admins)
+  useEffect(() => {
+    if (isInMaintenance && !isAuthenticated && !isAdmin) {
+      navigate("/login");
+    }
+  }, [isInMaintenance, isAuthenticated, isAdmin, navigate]);
+  
   // Filter novels based on search term and selected type
   useEffect(() => {
-    let filtered = mockNovels;
+    let filtered = novelsList;
     
     if (searchTerm) {
       filtered = filtered.filter(
@@ -62,7 +79,7 @@ const NovelSystem = () => {
     }
     
     setFilteredNovels(filtered);
-  }, [searchTerm, selectedType]);
+  }, [searchTerm, selectedType, novelsList]);
   
   const handleSelectNovel = (novel: Novel) => {
     setSelectedNovel(novel);
@@ -92,58 +109,149 @@ const NovelSystem = () => {
     setSelectedChapter(null);
   };
 
+  const handleAddNovel = (novel: Novel) => {
+    setNovelsList(prev => [novel, ...prev]);
+  };
+
+  const handleConnectToWordPress = async () => {
+    if (!wordpressUrl) {
+      toast({
+        title: "請輸入WordPress網址",
+        description: "WordPress網址不能為空",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const result = await connectToWordPress(wordpressUrl);
+      
+      if (result.success) {
+        toast({
+          title: "連接成功!",
+          description: result.message,
+        });
+        setShowWordPressDialog(false);
+      } else {
+        toast({
+          title: "連接失敗",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "連接錯誤",
+        description: `發生錯誤: ${error}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // If in maintenance mode and not admin, show maintenance notice
+  if (isInMaintenance && !isAdmin) {
+    return (
+      <MainLayout showBackButton>
+        <MaintenanceNotice featureName="小說系統" />
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout showBackButton>
-      {isInMaintenance ? (
-        <MaintenanceNotice featureName="小說系統" />
-      ) : (
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-3xl font-bold tracking-tight">小說系統</h1>
-            </div>
+      {isInMaintenance && isAdmin && <MaintenanceNotice featureName="小說系統" isAdmin />}
+      
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight">小說系統</h1>
           </div>
-
-          {readingMode && selectedChapter ? (
-            // Reading mode
-            <ReadingView 
-              novel={selectedNovel || undefined} 
-              chapter={selectedChapter} 
-              onBackToNovel={handleBackToNovel} 
-            />
-          ) : selectedNovel ? (
-            // Novel detail view
-            <NovelDetail 
-              novel={selectedNovel}
-              chapters={mockChapters}
-              onStartReading={handleStartReading}
-              onBackToList={handleBackToList}
-              onSelectChapter={handleSelectChapter}
-            />
-          ) : (
-            // Novel list view
-            <>
-              <NovelFilter 
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                selectedType={selectedType}
-                onTypeChange={setSelectedType}
-                novelTypes={novelTypes}
-                isMobile={isMobile}
-              />
-              
-              <NovelList 
-                novels={filteredNovels} 
-                onSelectNovel={handleSelectNovel}
-                onStartReading={handleStartReading}
-              />
-            </>
+          
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              onClick={() => setShowWordPressDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <LinkIcon className="h-4 w-4" />
+              連接WordPress
+            </Button>
           )}
         </div>
-      )}
+
+        {readingMode && selectedChapter ? (
+          // Reading mode
+          <ReadingView 
+            novel={selectedNovel || undefined} 
+            chapter={selectedChapter} 
+            onBackToNovel={handleBackToNovel} 
+          />
+        ) : selectedNovel ? (
+          // Novel detail view
+          <NovelDetail 
+            novel={selectedNovel}
+            chapters={mockChapters}
+            onStartReading={handleStartReading}
+            onBackToList={handleBackToList}
+            onSelectChapter={handleSelectChapter}
+          />
+        ) : (
+          // Novel list view
+          <>
+            <NovelFilter 
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+              novelTypes={novelTypes}
+              isMobile={isMobile}
+              onAddNovel={handleAddNovel}
+            />
+            
+            <NovelList 
+              novels={filteredNovels} 
+              onSelectNovel={handleSelectNovel}
+              onStartReading={handleStartReading}
+            />
+          </>
+        )}
+      </div>
+
+      {/* WordPress連接對話框 */}
+      <Dialog open={showWordPressDialog} onOpenChange={setShowWordPressDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>連接到WordPress</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="wpUrl">WordPress網址</Label>
+            <Input 
+              id="wpUrl" 
+              value={wordpressUrl} 
+              onChange={e => setWordpressUrl(e.target.value)} 
+              placeholder="https://yoursite.wordpress.com"
+              className="mt-2"
+            />
+            <p className="text-sm text-muted-foreground mt-2">
+              輸入您的WordPress網站URL，系統將會自動連接並同步內容。
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWordPressDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleConnectToWordPress} disabled={isConnecting}>
+              {isConnecting ? "連接中..." : "連接"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
