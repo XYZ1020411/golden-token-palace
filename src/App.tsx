@@ -4,8 +4,8 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProductProvider } from "@/context/ProductContext";
-import { VipProvider } from "@/context/VipContext";
 import { WalletProvider } from "@/context/WalletContext";
+import { VipProvider } from "@/context/VipContext";
 import { InfoServicesProvider } from "@/context/InfoServicesContext";
 import { AdminProvider } from "@/context/AdminContext";
 
@@ -36,9 +36,9 @@ function App() {
     <Router>
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <AuthProvider>
-          <ProductProvider>
-            <VipProvider>
-              <WalletProvider>
+          <WalletProvider>
+            <ProductProvider>
+              <VipProvider>
                 <InfoServicesProvider>
                   <AdminProvider>
                     <Toaster />
@@ -67,9 +67,9 @@ function App() {
                     </Routes>
                   </AdminProvider>
                 </InfoServicesProvider>
-              </WalletProvider>
-            </VipProvider>
-          </ProductProvider>
+              </VipProvider>
+            </ProductProvider>
+          </WalletProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>
