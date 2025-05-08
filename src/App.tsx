@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "./context/ThemeContext";
+import { Toaster } from "@/components/ui/toaster";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -34,7 +35,7 @@ function App() {
 
   return (
     <div className="app">
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <AuthProvider>
           <AdminProvider>
             <WalletProvider>
