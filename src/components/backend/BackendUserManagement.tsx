@@ -24,6 +24,7 @@ export const BackendUserManagement = ({
 }: BackendUserManagementProps) => {
   const [newUser, setNewUser] = useState({ username: "", password: "", role: "regular" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [pointsInputs, setPointsInputs] = useState<Record<string, number>>({});
   
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -33,6 +34,17 @@ export const BackendUserManagement = ({
     const success = await addUser(newUser.username, newUser.password, newUser.role as UserRole);
     if (success) {
       setNewUser({ username: "", password: "", role: "regular" });
+    }
+  };
+
+  const handlePointsChange = (userId: string, points: number) => {
+    setPointsInputs(prev => ({ ...prev, [userId]: points }));
+  };
+
+  const handleUpdatePoints = (userId: string) => {
+    const points = pointsInputs[userId];
+    if (points !== undefined) {
+      updateUser(userId, { points });
     }
   };
 
@@ -138,20 +150,11 @@ export const BackendUserManagement = ({
                   placeholder="輸入點數"
                   className="w-32"
                   defaultValue={user.points}
-                  onChange={(e) => {
-                    const points = parseInt(e.target.value) || 0;
-                    e.currentTarget.dataset.points = points.toString();
-                  }}
+                  onChange={(e) => handlePointsChange(user.id, parseInt(e.target.value) || 0)}
                 />
                 <Button 
                   size="sm"
-                  onClick={() => {
-                    const pointsInput = document.querySelector(`[data-points]`) as HTMLInputElement;
-                    const points = parseInt(pointsInput?.dataset.points || "0");
-                    if (points > 0) {
-                      updateUser(user.id, { points });
-                    }
-                  }}
+                  onClick={() => handleUpdatePoints(user.id)}
                 >
                   更新
                 </Button>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -127,7 +126,7 @@ const BalloonGame = () => {
   // Helper function to create a balloon
   const createBalloon = (id: number, width: number, height: number) => {
     const size = 40 + Math.random() * 30;
-    const value = Math.floor(size / 10) * 20; // Smaller balloons are worth more points
+    const value = Math.floor(1000 - (size * 10)); // Smaller balloons are worth more points
     
     return {
       id,
@@ -159,6 +158,7 @@ const BalloonGame = () => {
     setShowResults(false);
     setScore(0);
     setTimeLeft(15);
+    setBalloons([]); // Clear any existing balloons
   };
   
   const handlePopBalloon = (id: number, value: number) => {

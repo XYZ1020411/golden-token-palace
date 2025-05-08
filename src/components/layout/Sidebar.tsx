@@ -1,258 +1,164 @@
-
-import * as React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  ShieldAlert,
   LayoutDashboard,
-  Wallet,
-  Award,
-  Cloud,
-  Newspaper,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Menu,
-  LogOut,
-  User,
-  Inbox,
-  Terminal,
-  Target,
   PartyPopper,
-  BookOpen,
-  Star
+  Target,
+  Home,
+  Newspaper,
+  Wallet,
+  User,
+  Gift,
+  Inbox as InboxIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 
-export function Sidebar() {
-  const location = useLocation();
+export const Sidebar = () => {
   const { user, logout } = useAuth();
-  const isMobile = useIsMobile();
-  const [collapsed, setCollapsed] = React.useState(isMobile);
-  const [toggled, setToggled] = React.useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
-  const currentPath = location.pathname;
-
-  // Handle sidebar toggling
-  const handleToggle = () => {
-    setToggled(!toggled);
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
-
-  // Handle sidebar collapsing (only used on desktop)
-  const handleCollapse = () => {
-    setCollapsed(!collapsed);
-  };
-
-  // Reset toggled state when route changes
-  React.useEffect(() => {
-    setToggled(false);
-  }, [currentPath]);
-
-  // On mobile, always collapse sidebar
-  React.useEffect(() => {
-    if (isMobile) {
-      setCollapsed(true);
-    }
-  }, [isMobile]);
-
-  // Define navigation items
-  const navigationItems = [
-    {
-      icon: LayoutDashboard,
-      label: "儀表板",
-      href: "/dashboard",
-    },
-    {
-      icon: Wallet,
-      label: "錢包",
-      href: "/wallet",
-    },
-    {
-      icon: Award,
-      label: "VIP獎勵",
-      href: "/vip",
-    },
-    {
-      icon: Cloud,
-      label: "天氣資訊",
-      href: "/weather",
-    },
-    {
-      icon: Newspaper,
-      label: "新聞",
-      href: "/news",
-    },
-    {
-      icon: Inbox,
-      label: "收件夾",
-      href: "/inbox"
-    },
-    {
-      icon: User,
-      label: "個人資料",
-      href: "/profile",
-    },
-    {
-      icon: BookOpen,
-      label: "每日小說",
-      href: "/daily-novel",
-    },
-    {
-      icon: PartyPopper,
-      label: "射氣球",
-      href: "/balloon-game",
-    },
-    {
-      icon: Target,
-      label: "射飛鏢",
-      href: "/dart-game",
-    },
-    {
-      icon: Star,
-      label: "許願池",
-      href: "/wish-pool",
-    },
-  ];
-
-  // Admin navigation items
-  const adminItems = user?.role === "admin" ? [
-    {
-      icon: Settings,
-      label: "管理員",
-      href: "/admin",
-    },
-    {
-      icon: Terminal,
-      label: "後台管理",
-      href: "/backend",
-    },
-  ] : [];
-
+  
   return (
-    <>
-      {/* Mobile toggle button */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden"
-        onClick={handleToggle}
-      >
-        <Menu className="h-4 w-4" />
-      </Button>
+    <aside 
+      className={`border-r bg-background transition-all duration-300 ${collapsed ? 'w-12' : 'w-64'} min-h-screen`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className={`pt-4 ${collapsed && !hovered ? 'px-2' : 'px-6'} space-y-4`}>
+        <nav className="flex flex-col space-y-1">
+          <Button 
+            variant={location.pathname === "/dashboard" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/dashboard">
+              <Home className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "儀表板"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === "/profile" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/profile">
+              <User className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "個人資料"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === "/wallet" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/wallet">
+              <Wallet className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "錢包"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === "/news" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/news">
+              <Newspaper className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "新聞"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === "/gift-code" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/gift-code">
+              <Gift className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "禮品兌換"}
+            </Link>
+          </Button>
 
-      {/* Collapse/Expand button - visible on all screens */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="fixed bottom-4 left-4 z-50"
-        onClick={handleCollapse}
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </Button>
-
-      {/* Mobile overlay */}
-      {toggled && isMobile && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-          onClick={handleToggle}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed top-0 left-0 z-40 h-full border-r bg-background transition-all duration-300",
-          collapsed ? "w-[4.5rem]" : "w-64",
-          isMobile && !toggled && "translate-x-[-100%]",
-          isMobile && toggled && "translate-x-0"
-        )}
-      >
-        <div className="flex h-full flex-col">
-          {/* Sidebar Header */}
-          <div className="flex h-16 items-center border-b px-4">
-            {!collapsed && <span className="text-xl font-bold">系統選單</span>}
-            {/* Close button (mobile only) */}
-            {isMobile && toggled && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-auto"
-                onClick={handleToggle}
+          <Button 
+            variant={location.pathname === "/inbox" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/inbox">
+              <InboxIcon className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "站內信"}
+            </Link>
+          </Button>
+          
+          {user.role === "admin" && (
+            <>
+              <Button 
+                variant={location.pathname === "/admin" ? "secondary" : "ghost"} 
+                className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+                asChild
               >
-                <ChevronRight className="h-4 w-4" />
+                <Link to="/admin">
+                  <ShieldAlert className="h-4 w-4 mr-2" />
+                  {(!collapsed || hovered) && "管理員"}
+                </Link>
               </Button>
-            )}
-          </div>
-
-          {/* Sidebar Content */}
-          <ScrollArea className="flex-1">
-            <nav className="flex flex-col gap-1 p-2">
-              {/* Default navigation items */}
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.href}
-                  variant={currentPath === item.href ? "default" : "ghost"}
-                  className={cn(
-                    "justify-start",
-                    collapsed && "justify-center"
-                  )}
-                  asChild
-                >
-                  <Link to={item.href}>
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {!collapsed && <span>{item.label}</span>}
-                  </Link>
-                </Button>
-              ))}
-
-              {/* Admin items */}
-              {adminItems.length > 0 && (
-                <>
-                  <div
-                    className={cn(
-                      "my-2 border-t",
-                      collapsed && "mx-2"
-                    )}
-                  />
-                  {adminItems.map((item) => (
-                    <Button
-                      key={item.href}
-                      variant={currentPath === item.href ? "default" : "ghost"}
-                      className={cn(
-                        "justify-start",
-                        collapsed && "justify-center"
-                      )}
-                      asChild
-                    >
-                      <Link to={item.href}>
-                        <item.icon className="h-4 w-4 mr-2" />
-                        {!collapsed && <span>{item.label}</span>}
-                      </Link>
-                    </Button>
-                  ))}
-                </>
-              )}
-            </nav>
-          </ScrollArea>
-
-          {/* Sidebar Footer */}
-          <div className="mt-auto border-t p-2">
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start",
-                collapsed && "justify-center"
-              )}
-              onClick={logout}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              {!collapsed && <span>登出</span>}
-            </Button>
-          </div>
-        </div>
-      </aside>
-    </>
+              
+              <Button 
+                variant={location.pathname === "/backend" ? "secondary" : "ghost"} 
+                className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+                asChild
+              >
+                <Link to="/backend">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  {(!collapsed || hovered) && "後台管理"}
+                </Link>
+              </Button>
+            </>
+          )}
+          
+          <Button 
+            variant={location.pathname === "/balloon-game" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/balloon-game">
+              <PartyPopper className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "射氣球遊戲"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant={location.pathname === "/dart-game" ? "secondary" : "ghost"} 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            asChild
+          >
+            <Link to="/dart-game">
+              <Target className="h-4 w-4 mr-2" />
+              {(!collapsed || hovered) && "射飛鏢遊戲"}
+            </Link>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+            onClick={handleLogout}
+          >
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            {(!collapsed || hovered) && "登出"}
+          </Button>
+        </nav>
+      </div>
+    </aside>
   );
-}
+};

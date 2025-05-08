@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -293,14 +292,14 @@ const DartGame = () => {
                       size="lg" 
                       onClick={handleStartGame}
                     >
-                      再玩一次
+                      再玩一���
                     </Button>
                   </div>
                 ) : (
                   <div className="text-center p-4">
                     {isPlaying ? (
                       <div className="text-center">
-                        <p className="text-lg mb-2">滑動設定準星位置，鬆開發射！</p>
+                        <p className="text-lg mb-2">滑動設定準星位置，鬆發射！</p>
                         <Button 
                           className="w-full mt-2" 
                           size="lg" 
