@@ -10,8 +10,16 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Search, Plus, RefreshCw, Filter } from "lucide-react";
 import { Novel } from "@/types/novel";
+import { useState } from "react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface MangaFilterProps {
   searchTerm: string;
@@ -24,6 +32,8 @@ interface MangaFilterProps {
   onSyncContent: () => void;
   isSyncing: boolean;
   isAdmin?: boolean;
+  showOnlyManga?: boolean;
+  onShowMangaChange?: (value: boolean) => void;
 }
 
 const MangaFilter = ({ 
@@ -36,8 +46,12 @@ const MangaFilter = ({
   onAddNovel,
   onSyncContent,
   isSyncing,
-  isAdmin = false
+  isAdmin = false,
+  showOnlyManga = false,
+  onShowMangaChange
 }: MangaFilterProps) => {
+  const [showFilters, setShowFilters] = useState(false);
+
   return (
     <div className="flex flex-col sm:flex-row gap-4">
       <div className="relative flex-1">
@@ -67,6 +81,31 @@ const MangaFilter = ({
             </SelectGroup>
           </SelectContent>
         </Select>
+        
+        {onShowMangaChange && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-4">
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">進階篩選</h4>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="manga-only" 
+                    checked={showOnlyManga}
+                    onCheckedChange={(checked) => {
+                      onShowMangaChange(checked === true);
+                    }}
+                  />
+                  <Label htmlFor="manga-only">僅顯示漫畫</Label>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
         
         <Button 
           variant="outline" 

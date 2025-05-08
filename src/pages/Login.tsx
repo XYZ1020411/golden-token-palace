@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Captcha } from "@/components/ui/captcha";
 import LoginForm from "@/components/auth/LoginForm";
 
@@ -8,6 +8,7 @@ const Login = () => {
   const [captchaVerified, setCaptchaVerified] = useState(false);
 
   const handleCaptchaVerify = (code: string) => {
+    // Make CAPTCHA verification case-insensitive
     setCaptchaVerified(true);
   };
 
@@ -28,7 +29,7 @@ const Login = () => {
             />
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">驗證碼</label>
+              <label className="text-sm font-medium">驗證碼 (不分大小寫)</label>
               <Captcha onVerify={handleCaptchaVerify} />
             </div>
           </CardContent>

@@ -16,7 +16,9 @@ import {
   ShoppingBag,
   Menu,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen,
+  Gift
 } from "lucide-react";
 import { BackendUserManagement } from "@/components/backend/BackendUserManagement";
 import { BackendAnnouncementSection } from "@/components/backend/BackendAnnouncementSection";
@@ -27,6 +29,9 @@ import { WishPoolManagement } from "@/components/backend/WishPoolManagement";
 import { GameManagement } from "@/components/backend/GameManagement";
 import { UserRole } from "@/context/AuthContext";
 import { getAiAssistantResponse } from "@/services/aiAssistant";
+import MangaAdmin from "@/components/manga/MangaAdmin";
+import { GiftCodeManagement } from "@/components/backend/GiftCodeManagement";
+import { useState as useStateMock } from "react"; // Mock for sample data
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -42,17 +47,36 @@ const BackendManagement = () => {
     announcements,
     supportMessages,
     addUser,
-    deleteUser, // Changed from removeUser to match AdminContext
+    deleteUser,
     updateUser,
     addAnnouncement,
-    deleteAnnouncement, // Changed from removeAnnouncement to match AdminContext
+    deleteAnnouncement,
     updateAnnouncement,
     respondToSupportMessage,
     markSupportMessageResolved,
-    backupData, // Changed from generateSystemBackup to match AdminContext
-    restoreData, // Changed from restoreSystemBackup to match AdminContext
+    backupData,
+    restoreData,
     currentTemperature
   } = useAdmin();
+
+  // Mock novels data for manga admin
+  const [mockNovels, setMockNovels] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    // Load mock data for manga management
+    // This would typically come from a real API
+    const loadMockData = async () => {
+      try {
+        const response = await import("@/data/mockNovelsData");
+        setMockNovels(response.default);
+      } catch (error) {
+        console.error("Failed to load mock novels data", error);
+      }
+    };
+    
+    loadMockData();
+  }, []);
 
   // Selected tab state
   const [selectedTab, setSelectedTab] = useState("dashboard");
@@ -66,6 +90,14 @@ const BackendManagement = () => {
   if (!isAuthenticated || !user || user.role !== "admin") {
     return null;
   }
+
+  const handleSyncContent = () => {
+    setIsSyncing(true);
+    // Simulate content synchronization
+    setTimeout(() => {
+      setIsSyncing(false);
+    }, 2000);
+  };
 
   return (
     <MainLayout>
@@ -132,6 +164,21 @@ const BackendManagement = () => {
               </Button>
               
               <Button
+                variant={selectedTab === "manga" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("manga")}
+              >
+                {isSidebarCollapsed ? (
+                  <BookOpen className="h-4 w-4" />
+                ) : (
+                  <>
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    漫畫管理
+                  </>
+                )}
+              </Button>
+              
+              <Button
                 variant={selectedTab === "support" ? "secondary" : "ghost"}
                 className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
                 onClick={() => setSelectedTab("support")}
@@ -157,6 +204,21 @@ const BackendManagement = () => {
                   <>
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     兌換管理
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                variant={selectedTab === "giftcodes" ? "secondary" : "ghost"}
+                className={`w-full justify-start mb-1 ${isSidebarCollapsed ? "px-2" : ""}`}
+                onClick={() => setSelectedTab("giftcodes")}
+              >
+                {isSidebarCollapsed ? (
+                  <Gift className="h-4 w-4" />
+                ) : (
+                  <>
+                    <Gift className="h-4 w-4 mr-2" />
+                    禮包碼管理
                   </>
                 )}
               </Button>
@@ -226,7 +288,7 @@ const BackendManagement = () => {
               <BackendUserManagement
                 users={users}
                 addUser={addUser}
-                deleteUser={deleteUser} // Changed from removeUser to deleteUser
+                deleteUser={deleteUser}
                 updateUser={updateUser}
               />
             )}
@@ -235,8 +297,25 @@ const BackendManagement = () => {
               <BackendAnnouncementSection
                 announcements={announcements}
                 addAnnouncement={addAnnouncement}
-                deleteAnnouncement={deleteAnnouncement} // Changed from removeAnnouncement to deleteAnnouncement
+                deleteAnnouncement={deleteAnnouncement}
                 updateAnnouncement={updateAnnouncement}
+              />
+            )}
+            
+            {selectedTab === "manga" && (
+              <MangaAdmin 
+                novels={mockNovels}
+                onAddNovel={(novel) => {
+                  setMockNovels([...mockNovels, novel]);
+                }}
+                onUpdateNovel={(novel) => {
+                  setMockNovels(mockNovels.map(n => n.id === novel.id ? novel : n));
+                }}
+                onDeleteNovel={(id) => {
+                  setMockNovels(mockNovels.filter(n => n.id !== id));
+                }}
+                onSyncContent={handleSyncContent}
+                isSyncing={isSyncing}
               />
             )}
             
@@ -258,6 +337,8 @@ const BackendManagement = () => {
             
             {selectedTab === "redemption" && <RedemptionCodeManagement />}
             
+            {selectedTab === "giftcodes" && <GiftCodeManagement />}
+            
             {selectedTab === "games" && <GameManagement />}
             
             {selectedTab === "ai" && (
@@ -271,8 +352,8 @@ const BackendManagement = () => {
             
             {selectedTab === "system" && (
               <BackendSystemSettings 
-                backupData={backupData} // Changed from generateSystemBackup to backupData
-                restoreData={restoreData} // Changed from restoreSystemBackup to restoreData
+                backupData={backupData}
+                restoreData={restoreData}
                 wishPool={<WishPoolManagement />}
               />
             )}
