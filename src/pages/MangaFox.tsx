@@ -11,15 +11,16 @@ import { mockNovels, mockChapters } from "@/data/mockNovelsData";
 import { checkMaintenanceTime, isAdminUser } from "@/utils/novelUtils";
 import { fetchNovelsFromTTKan, setupTTKanSyncListener, fetchNovelChaptersFromTTKan } from "@/services/ttkanService";
 import MaintenanceNotice from "@/components/maintenance/MaintenanceNotice";
-import NovelFilter from "@/components/novel/NovelFilter";
-import NovelList from "@/components/novel/NovelList";
-import NovelDetail from "@/components/novel/NovelDetail";
-import ReadingView from "@/components/novel/ReadingView";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import MangaList from "@/components/manga/MangaList";
+import MangaFilter from "@/components/manga/MangaFilter";
+import MangaDetail from "@/components/manga/MangaDetail";
+import MangaReader from "@/components/manga/MangaReader";
+import MangaAdmin from "@/components/manga/MangaAdmin";
 
 const MangaFox = () => {
   const { user, isAuthenticated } = useAuth();
@@ -39,6 +40,7 @@ const MangaFox = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [chapters, setChapters] = useState<NovelChapter[]>([]);
+  const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const isAdmin = isAdminUser(user?.role);
@@ -267,6 +269,40 @@ const MangaFox = () => {
       console.error("Error adding novel:", error);
     }
   };
+  
+  const handleUpdateNovel = async (novel: Novel) => {
+    setNovelsList(prev => 
+      prev.map(item => item.id === novel.id ? novel : item)
+    );
+    
+    try {
+      await supabase
+        .from('customer_support')
+        .insert([{
+          message: `更新小說/漫畫: ${novel.title}`,
+          user_id: (await supabase.auth.getUser()).data.user?.id || 'system'
+        }]);
+    } catch (error) {
+      console.error("Error updating novel:", error);
+    }
+  };
+  
+  const handleDeleteNovel = async (id: string) => {
+    const novelToDelete = novelsList.find(novel => novel.id === id);
+    
+    setNovelsList(prev => prev.filter(item => item.id !== id));
+    
+    try {
+      await supabase
+        .from('customer_support')
+        .insert([{
+          message: `刪除小說/漫畫: ${novelToDelete?.title || id}`,
+          user_id: (await supabase.auth.getUser()).data.user?.id || 'system'
+        }]);
+    } catch (error) {
+      console.error("Error deleting novel:", error);
+    }
+  };
 
   const handleConnectToTTKan = async () => {
     if (!ttkanUrl) {
@@ -328,17 +364,16 @@ const MangaFox = () => {
           </div>
           
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleSyncFromTTKan}
-              disabled={isRefreshing}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? '同步中...' : '從TTKan同步'}
-            </Button>
-            
             {isAdmin && (
+              <Button
+                variant={showAdmin ? "default" : "outline"}
+                onClick={() => setShowAdmin(!showAdmin)}
+              >
+                {showAdmin ? "返回閱讀" : "管理後台"}
+              </Button>
+            )}
+            
+            {!showAdmin && (
               <Button 
                 variant="outline" 
                 onClick={() => setShowConnectionDialog(true)}
@@ -351,16 +386,51 @@ const MangaFox = () => {
           </div>
         </div>
 
-        {readingMode && selectedChapter ? (
-          // Reading mode
-          <ReadingView 
+        {showAdmin && isAdmin ? (
+          <MangaAdmin 
+            novels={novelsList}
+            onAddNovel={handleAddNovel}
+            onUpdateNovel={handleUpdateNovel}
+            onDeleteNovel={handleDeleteNovel}
+            onSyncContent={handleSyncFromTTKan}
+            isSyncing={isRefreshing}
+          />
+        ) : readingMode && selectedChapter ? (
+          <MangaReader
             novel={selectedNovel || undefined} 
-            chapter={selectedChapter} 
-            onBackToNovel={handleBackToNovel} 
+            chapter={selectedChapter}
+            onBackToNovel={handleBackToNovel}
+            onNextChapter={
+              chapters && selectedChapter ? 
+              (() => {
+                const currentIndex = chapters.findIndex(c => c.id === selectedChapter.id);
+                if (currentIndex < chapters.length - 1) {
+                  setSelectedChapter(chapters[currentIndex + 1]);
+                }
+              }) : undefined
+            }
+            onPreviousChapter={
+              chapters && selectedChapter ? 
+              (() => {
+                const currentIndex = chapters.findIndex(c => c.id === selectedChapter.id);
+                if (currentIndex > 0) {
+                  setSelectedChapter(chapters[currentIndex - 1]);
+                }
+              }) : undefined
+            }
+            hasNext={
+              chapters && selectedChapter ? 
+              chapters.findIndex(c => c.id === selectedChapter.id) < chapters.length - 1 : 
+              false
+            }
+            hasPrevious={
+              chapters && selectedChapter ? 
+              chapters.findIndex(c => c.id === selectedChapter.id) > 0 : 
+              false
+            }
           />
         ) : selectedNovel ? (
-          // Novel detail view
-          <NovelDetail 
+          <MangaDetail
             novel={selectedNovel}
             chapters={chapters.length > 0 ? chapters : mockChapters}
             onStartReading={handleStartReading}
@@ -368,21 +438,21 @@ const MangaFox = () => {
             onSelectChapter={handleSelectChapter}
           />
         ) : (
-          // Novel list view
           <>
-            <NovelFilter 
+            <MangaFilter 
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               selectedType={selectedType}
               onTypeChange={setSelectedType}
               novelTypes={novelTypes}
               isMobile={isMobile}
-              onAddNovel={handleAddNovel}
+              onAddNovel={isAdmin ? handleAddNovel : undefined}
               onSyncContent={handleSyncFromTTKan}
               isSyncing={isRefreshing}
+              isAdmin={isAdmin}
             />
             
-            <NovelList 
+            <MangaList 
               novels={filteredNovels} 
               onSelectNovel={handleSelectNovel}
               onStartReading={handleStartReading}
