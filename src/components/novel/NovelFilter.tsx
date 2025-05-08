@@ -100,7 +100,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
               <SelectValue placeholder="選擇漫畫類型" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">全部類型</SelectItem>
+              <SelectItem value="all">全部類型</SelectItem>
               {novelTypes.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}

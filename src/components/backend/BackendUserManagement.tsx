@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,14 +12,14 @@ import { Users, UserPlus, Search } from "lucide-react";
 interface BackendUserManagementProps {
   users: User[];
   addUser: (username: string, password: string, role: UserRole) => Promise<boolean>;
-  deleteUser: (userId: string) => Promise<boolean>; // Changed from removeUser to deleteUser
+  deleteUser: (userId: string) => Promise<boolean>; 
   updateUser: (userId: string, updates: Partial<User>) => Promise<boolean>;
 }
 
 export const BackendUserManagement = ({
   users,
   addUser,
-  deleteUser, // Changed from removeUser to deleteUser
+  deleteUser,
   updateUser
 }: BackendUserManagementProps) => {
   const [newUser, setNewUser] = useState({ username: "", password: "", role: "regular" });
@@ -157,7 +158,7 @@ export const BackendUserManagement = ({
                 <Button 
                   variant="destructive" 
                   size="sm"
-                  onClick={() => deleteUser(user.id)} // Changed from removeUser to deleteUser
+                  onClick={() => deleteUser(user.id)}
                 >
                   刪除
                 </Button>
