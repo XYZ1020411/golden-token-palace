@@ -9,11 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Facebook, Mail, Globe, MessageSquare } from "lucide-react";
+import { Captcha } from "@/components/ui/captcha";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const { login, socialLogin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -31,6 +33,17 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verify if captcha has been completed
+    if (!captchaVerified) {
+      toast({
+        title: "驗證失敗",
+        description: "請完成驗證碼驗證",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -94,6 +107,14 @@ const Login = () => {
     }
   };
 
+  const handleCaptchaVerify = (code: string) => {
+    setCaptchaVerified(true);
+    toast({
+      title: "驗證成功",
+      description: "驗證碼驗證成功",
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
@@ -134,6 +155,11 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>驗證碼</Label>
+                <Captcha onVerify={handleCaptchaVerify} />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">

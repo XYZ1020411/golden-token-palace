@@ -1,430 +1,246 @@
-import { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useWallet } from "@/context/WalletContext";
-import MainLayout from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft, PartyPopper, ThumbsUp } from "lucide-react";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Separator } from "@/components/ui/separator";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import MainLayout from "@/components/layout/MainLayout";
+import { Confetti } from 'lucide-react';
 
 const BalloonGame = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { addTransaction } = useWallet();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [reward, setReward] = useState(0);
-  const [showResults, setShowResults] = useState(false);
-  const [balloons, setBalloons] = useState<{id: number, x: number, y: number, size: number, popped: boolean, value: number}[]>([]);
+  const { toast } = useToast();
+  
+  const [gameActive, setGameActive] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [balloons, setBalloons] = useState<Array<{ id: number; x: number; y: number; speed: number; size: number; color: string }>>([]);
   const [score, setScore] = useState(0);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
-  const [timeLeft, setTimeLeft] = useState(15);
-  const balloonGeneratorRef = useRef<NodeJS.Timeout | null>(null);
-  const [gameStats, setGameStats] = useState({
-    totalPlays: 0,
-    totalRewards: 0,
-    averageReward: 0,
-    highestReward: 0,
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [gameConfig, setGameConfig] = useState({
+    minReward: 1000,
+    maxReward: 10000,
+    difficulty: 2 // 1-5
   });
-  const [isInMaintenance, setIsInMaintenance] = useState(false);
-  const [rewardSystemFixed, setRewardSystemFixed] = useState(true); // 獎勵系統修復狀態
-  const isMobile = useIsMobile();
-
+  
+  // Check authentication
   useEffect(() => {
-    // 這裡可以從後端加載遊戲統計數據
-    setGameStats({
-      totalPlays: 1245,
-      totalRewards: 7356000,
-      averageReward: 5908,
-      highestReward: 10000,
+    if (!user) {
+      toast({
+        title: "請先登入",
+        description: "您需要登入才能玩射氣球遊戲",
+        variant: "destructive"
+      });
+      navigate("/login");
+    }
+  }, [user, navigate, toast]);
+  
+  // Fetch game configuration
+  useEffect(() => {
+    // In a real app, this would fetch from backend
+    // For now, we'll use static config
+    setGameConfig({
+      minReward: 1000,
+      maxReward: 10000,
+      difficulty: 2
     });
   }, []);
-
-  // 檢查維護時間 - 更新為每天晚上6點到8點
+  
+  // Game timer
   useEffect(() => {
-    const checkMaintenanceSchedule = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      
-      // 每天晚上6點到晚上8點進行維護
-      const inMaintenance = hour >= 18 && hour < 20;
-      setIsInMaintenance(inMaintenance);
-    };
-    
-    checkMaintenanceSchedule();
-    const interval = setInterval(checkMaintenanceSchedule, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Create balloons when game starts and continuously generate new ones
-  useEffect(() => {
-    if (isPlaying && gameAreaRef.current) {
-      const width = gameAreaRef.current.offsetWidth;
-      const height = gameAreaRef.current.offsetHeight;
-      
-      // Initial balloons
-      const newBalloons = Array(5).fill(0).map((_, index) => createBalloon(index, width, height));
-      setBalloons(newBalloons);
-      
-      // Continuously generate new balloons
-      balloonGeneratorRef.current = setInterval(() => {
-        if (gameAreaRef.current) {
-          const currentWidth = gameAreaRef.current.offsetWidth;
-          const currentHeight = gameAreaRef.current.offsetHeight;
-          
-          setBalloons(prev => {
-            // Filter out popped balloons and keep only 12 active balloons max
-            const activeBalloonsCount = prev.filter(b => !b.popped).length;
-            if (activeBalloonsCount >= 12) return prev;
-            
-            // Create a new balloon with a unique ID
-            const newId = prev.length > 0 ? Math.max(...prev.map(b => b.id)) + 1 : 0;
-            const newBalloon = createBalloon(newId, currentWidth, currentHeight);
-            return [...prev, newBalloon];
-          });
-        }
-      }, 1000); // Add a new balloon every second
-      
-      // Timer countdown
+    if (gameActive && !gameEnded) {
       const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
+        setTimeLeft((prevTime) => {
+          if (prevTime <= 1) {
+            setGameEnded(true);
+            setGameActive(false);
             clearInterval(timer);
-            if (balloonGeneratorRef.current) {
-              clearInterval(balloonGeneratorRef.current);
-              balloonGeneratorRef.current = null;
-            }
-            handleGameEnd();
             return 0;
           }
-          return prev - 1;
+          return prevTime - 1;
         });
       }, 1000);
       
-      return () => {
-        clearInterval(timer);
-        if (balloonGeneratorRef.current) {
-          clearInterval(balloonGeneratorRef.current);
-          balloonGeneratorRef.current = null;
-        }
-      };
+      return () => clearInterval(timer);
     }
-  }, [isPlaying]);
-
-  // Helper function to create a balloon
-  const createBalloon = (id: number, width: number, height: number) => {
-    const size = 40 + Math.random() * 30;
-    const value = Math.floor(1000 - (size * 10)); // Smaller balloons are worth more points
-    
-    return {
-      id,
-      x: Math.random() * (width - size),
-      y: Math.random() * (height - size),
-      size,
-      popped: false,
-      value
-    };
-  };
-
+  }, [gameActive, gameEnded]);
+  
+  // Balloon generator
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
+    if (gameActive && !gameEnded) {
+      const spawnRate = 1500 - (gameConfig.difficulty * 200); // Faster spawn at higher difficulty
+      
+      const interval = setInterval(() => {
+        const newBalloon = {
+          id: Date.now(),
+          x: Math.random() * 80 + 10, // position from 10% to 90% of width
+          y: 100, // start at bottom
+          speed: (Math.random() + 0.5) * (gameConfig.difficulty / 2), // randomize speed based on difficulty
+          size: Math.floor(Math.random() * 20) + 30, // size between 30px and 50px
+          color: `hsl(${Math.floor(Math.random() * 360)}, 80%, 60%)` // random hue
+        };
+        
+        setBalloons(prevBalloons => [...prevBalloons, newBalloon]);
+      }, spawnRate);
+      
+      return () => clearInterval(interval);
     }
-  }, [isAuthenticated, navigate]);
-
-  const handleStartGame = () => {
-    if (isInMaintenance) {
-      toast({
-        title: "系統維護中",
-        description: "系統目前處於定期維護時間（每天晚上6點到晚上8點），期間此功能暫時無法使用。",
-        variant: "destructive"
-      });
-      return;
+  }, [gameActive, gameEnded, gameConfig.difficulty]);
+  
+  // Balloon movement
+  useEffect(() => {
+    if (gameActive && !gameEnded) {
+      const movementInterval = setInterval(() => {
+        setBalloons(prevBalloons => 
+          prevBalloons
+            .map(balloon => ({
+              ...balloon,
+              y: balloon.y - balloon.speed
+            }))
+            .filter(balloon => balloon.y > -10) // remove balloons that are off screen
+        );
+      }, 50);
+      
+      return () => clearInterval(movementInterval);
     }
-    
-    setIsPlaying(true);
-    setShowResults(false);
+  }, [gameActive, gameEnded]);
+  
+  const startGame = () => {
+    setGameActive(true);
+    setGameEnded(false);
+    setBalloons([]);
     setScore(0);
-    setTimeLeft(15);
-    setBalloons([]); // Clear any existing balloons
+    setTimeLeft(30);
+    
+    toast({
+      title: "遊戲開始！",
+      description: "快點擊氣球獲得獎勵！"
+    });
   };
   
-  const handlePopBalloon = (id: number, value: number) => {
-    if (!isPlaying) return;
+  const handleBalloonClick = (balloonId: number) => {
+    // Find and remove the clicked balloon
+    setBalloons(prevBalloons => prevBalloons.filter(b => b.id !== balloonId));
     
-    setBalloons(prev => 
-      prev.map(balloon => 
-        balloon.id === id 
-          ? { ...balloon, popped: true } 
-          : balloon
-      )
+    // Calculate points earned based on game config
+    const pointsEarned = Math.floor(
+      Math.random() * (gameConfig.maxReward - gameConfig.minReward) + gameConfig.minReward
     );
     
-    setScore(prev => prev + value);
+    // Update score
+    setScore(prevScore => prevScore + pointsEarned);
+    
+    // Show toast for points
+    toast({
+      title: "得分！",
+      description: `+${pointsEarned} 點`,
+    });
   };
   
-  const handleGameEnd = () => {
-    setIsPlaying(false);
+  const claimRewards = () => {
+    // In a real app, this would call an API to add points to user account
+    toast({
+      title: "獎勵已領取",
+      description: `您獲得了 ${score} 點！`,
+    });
     
-    // Calculate reward based on score
-    const userReward = Math.min(score * 10, 10000); // Maximum reward cap
-    setReward(userReward);
-    
-    if (rewardSystemFixed) {
-      // 增加交易記錄
-      addTransaction({
-        amount: userReward,
-        type: "system",
-        description: "射氣球遊戲獎勵",
-      });
-      
-      // 更新遊戲統計
-      setGameStats(prev => ({
-        totalPlays: prev.totalPlays + 1,
-        totalRewards: prev.totalRewards + userReward,
-        averageReward: Math.floor((prev.totalRewards + userReward) / (prev.totalPlays + 1)),
-        highestReward: Math.max(prev.highestReward, userReward),
-      }));
-      
-      toast({
-        title: "遊戲結束！",
-        description: `您獲得了 ${userReward.toLocaleString()} 點獎勵！`,
-      });
-    } else {
-      toast({
-        title: "遊戲結束！",
-        description: "很遺憾，獎勵系統目前出現問題，技術團隊正在修復中。",
-        variant: "destructive"
-      });
-    }
-    
-    setShowResults(true);
+    // After claiming, reset game state
+    setGameActive(false);
+    setGameEnded(false);
+    setBalloons([]);
+    setScore(0);
   };
-
-  if (!isAuthenticated) return null;
-
+  
   return (
-    <MainLayout showBackButton>
-      {isInMaintenance ? (
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">系統維護中</h1>
-          <p className="text-lg text-muted-foreground mb-4">
-            系統目前處於定期維護時間（每天晚上6點到晚上8點），期間氣球遊戲功能暫時無法使用。
-          </p>
-          <p className="text-muted-foreground">
-            請於維護時間結束後再次訪問。感謝您的理解與支持。
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-3xl font-bold tracking-tight">射氣球遊戲</h1>
+    <MainLayout>
+      <div className="container mx-auto p-4">
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold flex justify-center items-center gap-2">
+              <Confetti className="h-6 w-6" />
+              射氣球遊戲
+              <Confetti className="h-6 w-6" />
+            </CardTitle>
+            <CardDescription>
+              點擊飛起的氣球獲得獎勵點數
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex justify-between">
+              <div className="text-xl font-bold">得分: {score}</div>
+              {gameActive && <div className="text-xl font-bold">時間: {timeLeft}秒</div>}
             </div>
-          </div>
-
-          {!rewardSystemFixed && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <div className="flex items-center">
-                <ThumbsUp className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                <p className="text-green-800 dark:text-green-300">
-                  氣球遊戲獎勵系統已修復，現在可以正常獲取獎勵！
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <PartyPopper className="mr-2 h-5 w-5" />
-                  射氣球遊戲
-                </CardTitle>
-                <CardDescription>
-                  射擊氣球獲得獎勵，分數越高獎勵越多！
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                {!isPlaying && !showResults ? (
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="text-center mb-6">
-                      <PartyPopper className="h-12 w-12 mx-auto mb-2" />
-                      <p className="text-xl font-bold">準備好射氣球了嗎？</p>
-                      <p className="text-sm text-muted-foreground mt-2">點擊氣球獲得分數！</p>
-                    </div>
-                    
-                    <Button 
-                      className="w-full" 
-                      size="lg" 
-                      onClick={handleStartGame}
-                    >
-                      開始遊戲
-                    </Button>
-                  </div>
-                ) : isPlaying ? (
-                  <div className="flex flex-col">
-                    <div className="flex justify-between mb-2">
-                      <div className="text-lg font-bold">分數: {score}</div>
-                      <div className="text-lg font-bold">時間: {timeLeft}秒</div>
-                    </div>
-                    <div 
-                      ref={gameAreaRef} 
-                      className={`aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg relative overflow-hidden ${isMobile ? "h-[40vh]" : "h-auto"}`}
-                      style={{ touchAction: "none" }}
-                    >
-                      {balloons.map(balloon => (
-                        !balloon.popped && (
-                          <div
-                            key={balloon.id}
-                            className="absolute cursor-pointer transition-transform hover:scale-105"
-                            style={{
-                              left: `${balloon.x}px`,
-                              top: `${balloon.y}px`,
-                              width: `${balloon.size}px`,
-                              height: `${balloon.size}px`,
-                            }}
-                            onClick={() => handlePopBalloon(balloon.id, balloon.value)}
-                          >
-                            <div className="w-full h-full rounded-full flex items-center justify-center animate-bounce"
-                                style={{
-                                  background: `radial-gradient(circle at 30% 30%, 
-                                              rgb(255, ${50 + balloon.value}, ${50 + balloon.value}), 
-                                              rgb(180, 0, 0))`,
-                                  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)'
-                                }}>
-                              <span className="text-white font-bold" style={{ fontSize: `${balloon.size / 3}px` }}>
-                                {balloon.value}
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center p-4">
-                    <h3 className="text-2xl font-bold mb-2">遊戲結束！</h3>
-                    <p className="text-lg mb-4">您的分數: <span className="font-bold">{score}</span></p>
-                    {rewardSystemFixed ? (
-                      <p className="text-3xl font-bold mb-6">獲得 {reward.toLocaleString()} 點</p>
-                    ) : (
-                      <p className="text-lg text-red-600 mb-6">獎勵系統已修復</p>
-                    )}
-                    
-                    <Button 
-                      className="w-full" 
-                      size="lg" 
-                      onClick={handleStartGame}
-                    >
-                      再玩一次
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>遊戲統計</CardTitle>
-                <CardDescription>
-                  您的遊戲數據與獎勵統計
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-2"} gap-4`}>
-                  <div className="p-4 border rounded-md">
-                    <p className="text-sm text-muted-foreground">總遊玩次數</p>
-                    <p className="text-2xl font-bold">{gameStats.totalPlays.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 border rounded-md">
-                    <p className="text-sm text-muted-foreground">總發出獎勵</p>
-                    <p className="text-2xl font-bold">{gameStats.totalRewards.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 border rounded-md">
-                    <p className="text-sm text-muted-foreground">平均獎勵</p>
-                    <p className="text-2xl font-bold">{gameStats.averageReward.toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 border rounded-md">
-                    <p className="text-sm text-muted-foreground">最高獎勵</p>
-                    <p className="text-2xl font-bold">{gameStats.highestReward.toLocaleString()}</p>
+            {/* Game Area */}
+            <div 
+              className="relative w-full border rounded-lg bg-sky-50 overflow-hidden"
+              style={{height: "400px"}}
+            >
+              {gameActive && !gameEnded ? (
+                <>
+                  {balloons.map(balloon => (
+                    <div
+                      key={balloon.id}
+                      onClick={() => handleBalloonClick(balloon.id)}
+                      style={{
+                        position: "absolute",
+                        left: `${balloon.x}%`,
+                        bottom: `${balloon.y}%`,
+                        width: `${balloon.size}px`,
+                        height: `${balloon.size * 1.2}px`,
+                        backgroundColor: balloon.color,
+                        borderRadius: "50% 50% 50% 50% / 40% 40% 60% 60%",
+                        cursor: "pointer",
+                        transition: "bottom 0.1s linear",
+                      }}
+                      className="balloon hover:scale-110 active:scale-90"
+                    >
+                      <div 
+                        style={{
+                          position: "absolute",
+                          bottom: "-10px",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: "1px",
+                          height: "20px",
+                          backgroundColor: "#888",
+                        }}
+                      ></div>
+                    </div>
+                  ))}
+                </>
+              ) : gameEnded ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center p-6 bg-white/80 rounded-lg shadow-lg">
+                    <h2 className="text-2xl font-bold mb-4">遊戲結束！</h2>
+                    <p className="text-xl mb-4">您的得分: <span className="font-bold">{score}</span></p>
+                    <div className="flex gap-2">
+                      <Button onClick={claimRewards}>領取獎勵</Button>
+                      <Button onClick={startGame} variant="outline">再玩一次</Button>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>遊戲規則</CardTitle>
-              <CardDescription>如何玩射氣球遊戲</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p>射氣球是一個簡單且有趣的小遊戲，您可以通過它獲得點數獎勵：</p>
-                <ol className="list-decimal list-inside space-y-2">
-                  <li>點擊「開始遊戲」按鈕開始遊戲</li>
-                  <li>在15秒時間內點擊氣球使其爆炸</li>
-                  <li>不同大小的氣球有不同分數值</li>
-                  <li>小氣球比大氣球值更多分數</li>
-                  <li>分數將轉換為獎勵點數，最高10,000點</li>
-                  <li>氣球會不斷生成，越多越好！</li>
-                </ol>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <Button variant="outline">獎勵機制詳情</Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>獎勵機制詳情</DrawerTitle>
-                    <DrawerDescription>瞭解射氣球遊戲的獎勵計算方式</DrawerDescription>
-                  </DrawerHeader>
-                  <div className="p-4 space-y-4">
-                    <p>射氣球遊戲的獎勵基於以下機制：</p>
-                    <ul className="list-disc list-inside space-y-2">
-                      <li>基本獎勵：每100分換算為1000點獎勵</li>
-                      <li>最高獎勵：8000分可獲得80000點獎勵</li>
-                      <li>VIP會員可享受獎勵加成：
-                        <ul className="list-inside pl-4 space-y-1">
-                          <li>VIP 1級：基本獎勵</li>
-                          <li>VIP 2級：基本獎勵 × 1.2</li>
-                          <li>VIP 3級：基本獎勵 × 1.5</li>
-                          <li>VIP 4級及以上：基本獎勵 × 2</li>
-                        </ul>
-                      </li>
-                      <li>特別活動期間可能提供額外獎勵加成</li>
-                      <li>每日首次遊玩可獲得額外 10% 獎勵</li>
-                    </ul>
-                  </div>
-                  <DrawerFooter>
-                    <DrawerClose asChild>
-                      <Button>確定</Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Button size="lg" onClick={startGame}>開始遊戲</Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <div className="w-full">
+              <h3 className="text-lg font-semibold mb-2">遊戲規則</h3>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>點擊飛行中的氣球獲得獎勵點數</li>
+                <li>每個氣球獎勵 {gameConfig.minReward} - {gameConfig.maxReward} 點</li>
+                <li>遊戲時間 30 秒</li>
+                <li>點擊越多氣球，獲得越多獎勵</li>
+              </ul>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </MainLayout>
   );
 };
