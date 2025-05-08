@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
-import { Confetti } from 'lucide-react';
+import { PartyPopper } from 'lucide-react';
 
 const BalloonGame = () => {
   const { user } = useAuth();
@@ -158,9 +158,9 @@ const BalloonGame = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold flex justify-center items-center gap-2">
-              <Confetti className="h-6 w-6" />
+              <PartyPopper className="h-6 w-6" />
               射氣球遊戲
-              <Confetti className="h-6 w-6" />
+              <PartyPopper className="h-6 w-6" />
             </CardTitle>
             <CardDescription>
               點擊飛起的氣球獲得獎勵點數
