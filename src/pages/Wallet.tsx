@@ -117,6 +117,9 @@ const Wallet = () => {
         return <Gift className="h-4 w-4 text-green-500" />;
       case "vip":
         return <Gift className="h-4 w-4 text-primary" />;
+      case "admin":
+      case "system":
+        return <CreditCard className="h-4 w-4" />;
       default:
         return <CreditCard className="h-4 w-4" />;
     }
@@ -126,12 +129,12 @@ const Wallet = () => {
     switch (transaction.type) {
       case "transfer":
         return transaction.fromUser === user?.username
-          ? `轉帳至 ${transaction.toUser}`
-          : `從 ${transaction.fromUser} 收到轉帳`;
+          ? `轉帳至 ${transaction.toUser || '未知用戶'}`
+          : `從 ${transaction.fromUser || '未知用戶'} 收到轉帳`;
       case "gift":
         return transaction.fromUser === user?.username
-          ? `贈送給 ${transaction.toUser}`
-          : `從 ${transaction.fromUser} 收到禮物`;
+          ? `贈送給 ${transaction.toUser || '未知用戶'}`
+          : `從 ${transaction.fromUser || '未知用戶'} 收到禮物`;
       case "daily":
         return "每日簽到獎勵";
       case "vip":
@@ -139,6 +142,7 @@ const Wallet = () => {
       case "exchange":
         return "商品兌換";
       case "admin":
+      case "system":
         return "管理員操作";
       default:
         return "系統操作";

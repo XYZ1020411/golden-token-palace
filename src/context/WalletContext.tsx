@@ -6,10 +6,12 @@ import { toast } from "sonner";
 export interface Transaction {
   id: string;
   amount: number;
-  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward" | "transfer" | "gift" | "daily" | "exchange" | "system" | "vip";
+  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward" | "transfer" | "gift" | "daily" | "exchange" | "system" | "vip" | "admin";
   description: string;
   created_at: string;
   date: string; // Added this field for compatibility
+  fromUser?: string; // Added for transfer/gift sender
+  toUser?: string; // Added for transfer/gift recipient
 }
 
 interface WalletContextType {
@@ -149,6 +151,11 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         description,
         created_at: new Date().toISOString(),
         date: new Date().toISOString(),
+        // Add sender/recipient for transfer and gift types
+        ...(type === "transfer" || type === "gift" ? {
+          fromUser: user?.username || "匿名用戶",
+          toUser: description.split(" ").pop() || "未知用戶"
+        } : {})
       };
       
       // Update local state
@@ -227,12 +234,30 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error("餘額不足");
       return false;
     }
-    return processTransaction(amount, "transfer", description || `轉帳 ${amount} 點給 ${recipient}`);
+    const transaction = await processTransaction(amount, "transfer", description || `轉帳 ${amount} 點給 ${recipient}`);
+    if (transaction) {
+      // Update the fromUser and toUser fields for the last transaction
+      const lastTransaction = transactions[0];
+      if (lastTransaction && lastTransaction.type === "transfer") {
+        lastTransaction.fromUser = user?.username || "匿名用戶";
+        lastTransaction.toUser = recipient;
+      }
+    }
+    return transaction;
   };
 
   // Add gift functionality
   const gift = async (amount: number, description: string): Promise<boolean> => {
-    return processTransaction(amount, "gift", description);
+    const transaction = await processTransaction(amount, "gift", description);
+    if (transaction) {
+      // Update the fromUser and toUser fields for the last transaction
+      const lastTransaction = transactions[0];
+      if (lastTransaction && lastTransaction.type === "gift") {
+        lastTransaction.fromUser = user?.username || "匿名用戶";
+        lastTransaction.toUser = description;
+      }
+    }
+    return transaction;
   };
 
   // Refresh wallet data
