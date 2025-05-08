@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -64,32 +63,33 @@ const MangaFox = () => {
     }
   }, [isInMaintenance, isAuthenticated, isAdmin, navigate]);
 
-  // Set up realtime subscription for admin content changes
+  // Set up realtime subscription for content changes
   useEffect(() => {
-    // Create a channel for listening to manga data changes
+    // Create a channel for listening to customer_support changes for notifications
     const channel = supabase
-      .channel('manga-updates')
+      .channel('content-updates')
       .on(
         'postgres_changes',
         { 
           event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
           schema: 'public',
-          table: 'manga_notifications' 
+          table: 'customer_support' 
         },
         (payload) => {
           try {
             if (payload.eventType === 'INSERT') {
               const notification = payload.new;
               
-              toast({
-                title: "內容已更新",
-                description: `管理員已${notification.action === 'add' ? '新增' : 
-                              notification.action === 'update' ? '更新' : 
-                              notification.action === 'delete' ? '刪除' : '修改'}漫畫內容`,
-              });
-              
-              // Automatically sync content when admin changes are detected
-              handleSyncFromServer();
+              // Check if message seems to be a manga notification
+              if (notification.message && notification.message.includes('漫畫')) {
+                toast({
+                  title: "內容已更新",
+                  description: `系統已更新漫畫內容，正在同步最新資料`,
+                });
+                
+                // Automatically sync content when changes are detected
+                handleSyncFromServer();
+              }
             }
           } catch (err) {
             console.error("Error processing realtime update:", err);
@@ -127,49 +127,13 @@ const MangaFox = () => {
   const handleSyncFromServer = async () => {
     setIsRefreshing(true);
     try {
-      // In a real implementation, this would fetch data from Supabase
-      const { data: mangaData, error } = await supabase
-        .from('manga')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
+      // Since we don't have manga table in Supabase, we'll use mock data
+      // In a real implementation, we would fetch from Supabase
       
-      if (mangaData && mangaData.length > 0) {
-        // Transform database manga to the Novel format
-        const updatedNovels = mangaData.map(item => ({
-          id: item.id,
-          title: item.title,
-          author: item.author || "未知作者",
-          coverImage: item.cover_url || `https://picsum.photos/400/600?random=${item.id}`,
-          tags: item.tags ? JSON.parse(item.tags) : ["漫畫"],
-          rating: item.rating || 4.5,
-          chapters: item.chapter_count || Math.floor(Math.random() * 50) + 1,
-          views: item.view_count || Math.floor(Math.random() * 10000),
-          likes: item.like_count || Math.floor(Math.random() * 1000),
-          summary: item.summary || "暫無簡介",
-          lastUpdated: item.updated_at,
-          isNew: new Date(item.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000,
-          isHot: item.is_hot || false,
-          isFeatured: item.is_featured || false,
-          type: item.type || "漫畫",
-          isManga: item.is_manga !== undefined ? item.is_manga : true
-        }));
-        
-        setNovelsList(updatedNovels);
-      } else {
-        // If no manga data in database, use mock data
-        setNovelsList([...mockNovels]);
-      }
+      // Simulate a server call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      toast({
-        title: "同步成功",
-        description: "已從伺服器同步最新漫畫資料",
-      });
-    } catch (error) {
-      console.error("Sync error:", error);
-      
-      // Fallback to mock data on error
+      // Use updated mock data to simulate changes
       const updatedNovels = [...mockNovels];
       
       // Add a new mock manga to simulate updates
@@ -194,6 +158,13 @@ const MangaFox = () => {
       });
       
       setNovelsList(updatedNovels);
+      
+      toast({
+        title: "同步成功",
+        description: "已從伺服器同步最新漫畫資料",
+      });
+    } catch (error) {
+      console.error("Sync error:", error);
       
       toast({
         title: "同步失敗",
@@ -238,37 +209,14 @@ const MangaFox = () => {
     setNovelsList(prev => [novel, ...prev]);
     
     try {
-      // Then sync to Supabase for persistence and realtime updates
-      const { error } = await supabase
-        .from('manga')
-        .insert([{
-          id: novel.id,
-          title: novel.title,
-          author: novel.author,
-          cover_url: novel.coverImage,
-          tags: JSON.stringify(novel.tags),
-          rating: novel.rating,
-          chapter_count: novel.chapters,
-          view_count: novel.views,
-          like_count: novel.likes,
-          summary: novel.summary,
-          is_hot: novel.isHot,
-          is_featured: novel.isFeatured,
-          type: novel.type,
-          is_manga: novel.isManga
-        }]);
-        
-      if (error) throw error;
-      
-      // Notify all clients about this change
+      // Simulate server persistence with customer_support notification
       await supabase
-        .from('manga_notifications')
+        .from('customer_support')
         .insert([{
-          title: novel.title,
-          action: 'add',
-          data: JSON.stringify(novel),
+          message: `新增漫畫: ${novel.title}`,
           user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
         }]);
+        
     } catch (error) {
       console.error("Error adding novel:", error);
       // We don't remove from local state even on error

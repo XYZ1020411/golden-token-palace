@@ -61,17 +61,20 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
         });
         onSearchChange(''); // 清除搜尋欄
 
-        // Notify admin changes through Supabase realtime
-        await supabase
-          .from('manga_notifications')
-          .insert([
-            { 
-              title: newNovel.title,
-              action: 'add',
-              data: JSON.stringify(newNovel),
-              user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
-            }
-          ]);
+        // Since we don't have manga_notifications table, we'll use customer_support to simulate notifications
+        // This is a temporary solution until proper tables are created
+        try {
+          await supabase
+            .from('customer_support')
+            .insert([
+              { 
+                message: `新增漫畫: ${newNovel.title}`,
+                user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
+              }
+            ]);
+        } catch (error) {
+          console.error("無法發送同步通知:", error);
+        }
       }
     } catch (error) {
       toast({

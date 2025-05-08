@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,7 @@ import { toast } from "sonner";
 export interface Transaction {
   id: string;
   amount: number;
-  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward" | "transfer" | "gift" | "daily";
+  type: "deposit" | "withdrawal" | "purchase" | "refund" | "reward" | "transfer" | "gift" | "daily" | "exchange" | "system" | "vip";
   description: string;
   created_at: string;
   date: string; // Added this field for compatibility
