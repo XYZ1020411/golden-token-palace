@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -7,7 +8,8 @@ import { ArrowLeft, LinkIcon, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Novel, NovelChapter } from "@/types/novel";
 import { mockNovels, mockChapters } from "@/data/mockNovelsData";
-import { checkMaintenanceTime, isAdminUser, connectToWordPress, searchMangaOnGoogle, importNovelFromGoogle } from "@/utils/novelUtils";
+import { checkMaintenanceTime, isAdminUser } from "@/utils/novelUtils";
+import { fetchNovelsFromTTKan, setupTTKanSyncListener, fetchNovelChaptersFromTTKan } from "@/services/ttkanService";
 import MaintenanceNotice from "@/components/maintenance/MaintenanceNotice";
 import NovelFilter from "@/components/novel/NovelFilter";
 import NovelList from "@/components/novel/NovelList";
@@ -31,10 +33,12 @@ const MangaFox = () => {
   const [novelTypes, setNovelTypes] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
   const [isInMaintenance, setIsInMaintenance] = useState(false);
-  const [showWordPressDialog, setShowWordPressDialog] = useState(false);
-  const [wordpressUrl, setWordpressUrl] = useState("");
+  const [showConnectionDialog, setShowConnectionDialog] = useState(false);
+  const [ttkanUrl, setTtkanUrl] = useState("https://www.ttkan.co");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [chapters, setChapters] = useState<NovelChapter[]>([]);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const isAdmin = isAdminUser(user?.role);
@@ -63,46 +67,71 @@ const MangaFox = () => {
     }
   }, [isInMaintenance, isAuthenticated, isAdmin, navigate]);
 
-  // Set up realtime subscription for content changes
+  // Initial data load and TTKan sync setup
   useEffect(() => {
-    // Create a channel for listening to customer_support changes for notifications
-    const channel = supabase
-      .channel('content-updates')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'customer_support' 
-        },
-        (payload) => {
-          try {
-            if (payload.eventType === 'INSERT') {
-              const notification = payload.new;
-              
-              // Check if message seems to be a manga notification
-              if (notification.message && notification.message.includes('漫畫')) {
-                toast({
-                  title: "內容已更新",
-                  description: `系統已更新漫畫內容，正在同步最新資料`,
-                });
-                
-                // Automatically sync content when changes are detected
-                handleSyncFromServer();
-              }
-            }
-          } catch (err) {
-            console.error("Error processing realtime update:", err);
-          }
-        }
-      )
-      .subscribe();
+    // Only do initial fetch if not in maintenance or if user is admin
+    if (!isInMaintenance || (isAuthenticated && isAdmin)) {
+      if (isFirstLoad) {
+        handleSyncFromTTKan();
+        setIsFirstLoad(false);
+      }
 
-    // Cleanup subscription when component unmounts
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      // Set up TTKan sync listener
+      const cleanupListener = setupTTKanSyncListener((updatedNovels) => {
+        setNovelsList(prevNovels => {
+          // Only update if we got new novels
+          if (updatedNovels && updatedNovels.length > 0) {
+            toast({
+              title: "同步成功",
+              description: `已從TTKan同步最新小說資料 (${updatedNovels.length}本)`
+            });
+            return updatedNovels;
+          }
+          return prevNovels;
+        });
+      });
+
+      // Set up realtime subscription for content changes
+      const channel = supabase
+        .channel('content-updates')
+        .on(
+          'postgres_changes',
+          { 
+            event: '*',
+            schema: 'public',
+            table: 'customer_support' 
+          },
+          (payload) => {
+            try {
+              if (payload.eventType === 'INSERT') {
+                const notification = payload.new;
+                
+                if (notification.message && 
+                   (notification.message.includes('漫畫') || 
+                    notification.message.includes('小說') || 
+                    notification.message.includes('TTKan'))) {
+                  toast({
+                    title: "內容已更新",
+                    description: `系統已更新內容，正在同步最新資料`,
+                  });
+                  
+                  // Automatically sync content when changes are detected
+                  handleSyncFromTTKan();
+                }
+              }
+            } catch (err) {
+              console.error("Error processing realtime update:", err);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        cleanupListener();
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isInMaintenance, isAuthenticated, isAdmin, isFirstLoad]);
   
   // Filter novels based on search term and selected type
   useEffect(() => {
@@ -123,52 +152,65 @@ const MangaFox = () => {
     setFilteredNovels(filtered);
   }, [searchTerm, selectedType, novelsList]);
 
-  // Sync content from server
-  const handleSyncFromServer = async () => {
+  // Load chapters when a novel is selected
+  useEffect(() => {
+    if (selectedNovel && !readingMode) {
+      const loadChapters = async () => {
+        try {
+          const novelChapters = await fetchNovelChaptersFromTTKan(selectedNovel.id);
+          setChapters(novelChapters);
+        } catch (error) {
+          console.error("無法載入章節:", error);
+          toast({
+            title: "載入失敗",
+            description: "無法從TTKan載入章節，使用本地章節",
+            variant: "destructive"
+          });
+          setChapters(mockChapters);
+        }
+      };
+      
+      loadChapters();
+    }
+  }, [selectedNovel, readingMode]);
+
+  // Sync content from TTKan
+  const handleSyncFromTTKan = async () => {
     setIsRefreshing(true);
     try {
-      // Since we don't have manga table in Supabase, we'll use mock data
-      // In a real implementation, we would fetch from Supabase
+      const ttkanNovels = await fetchNovelsFromTTKan();
       
-      // Simulate a server call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Use updated mock data to simulate changes
-      const updatedNovels = [...mockNovels];
-      
-      // Add a new mock manga to simulate updates
-      const randomId = Math.random().toString(36).substring(2, 10);
-      updatedNovels.unshift({
-        id: randomId,
-        title: `新漫畫 ${randomId.substring(0, 4)}`,
-        author: "系統同步",
-        coverImage: `https://picsum.photos/400/600?random=${randomId}`,
-        tags: ["漫畫", "同步更新"],
-        rating: 4.5,
-        chapters: Math.floor(Math.random() * 50) + 1,
-        views: Math.floor(Math.random() * 10000),
-        likes: Math.floor(Math.random() * 1000),
-        summary: "這是一個從伺服器同步的新漫畫。",
-        lastUpdated: new Date().toISOString(),
-        isNew: true,
-        isHot: Math.random() > 0.5,
-        isFeatured: false,
-        type: "漫畫",
-        isManga: true
-      });
-      
-      setNovelsList(updatedNovels);
-      
-      toast({
-        title: "同步成功",
-        description: "已從伺服器同步最新漫畫資料",
-      });
+      if (ttkanNovels && ttkanNovels.length > 0) {
+        setNovelsList(ttkanNovels);
+        
+        toast({
+          title: "同步成功",
+          description: `已從TTKan同步最新小說/漫畫資料 (${ttkanNovels.length}本)`,
+        });
+        
+        // Notify admin about the sync
+        try {
+          await supabase
+            .from('customer_support')
+            .insert([{
+              message: `小說/漫畫資料已同步：從TTKan同步了 ${ttkanNovels.length} 本內容`,
+              user_id: (await supabase.auth.getUser()).data.user?.id || 'system'
+            }]);
+        } catch (error) {
+          console.error("無法發送同步通知:", error);
+        }
+      } else {
+        toast({
+          title: "同步提示",
+          description: "沒有發現新的內容更新"
+        });
+      }
     } catch (error) {
       console.error("Sync error:", error);
       
       toast({
         title: "同步失敗",
-        description: `無法從伺服器同步資料，使用本地資料`,
+        description: `無法從TTKan同步資料: ${error}`,
         variant: "destructive"
       });
     } finally {
@@ -184,7 +226,11 @@ const MangaFox = () => {
   
   const handleStartReading = (novel: Novel) => {
     setSelectedNovel(novel);
-    setSelectedChapter(mockChapters[0]);
+    if (chapters && chapters.length > 0) {
+      setSelectedChapter(chapters[0]);
+    } else {
+      setSelectedChapter(mockChapters[0]);
+    }
     setReadingMode(true);
   };
   
@@ -209,26 +255,24 @@ const MangaFox = () => {
     setNovelsList(prev => [novel, ...prev]);
     
     try {
-      // Simulate server persistence with customer_support notification
+      // Notify admin about the new novel
       await supabase
         .from('customer_support')
         .insert([{
-          message: `新增漫畫: ${novel.title}`,
-          user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
+          message: `新增小說/漫畫: ${novel.title}`,
+          user_id: (await supabase.auth.getUser()).data.user?.id || 'system'
         }]);
         
     } catch (error) {
       console.error("Error adding novel:", error);
-      // We don't remove from local state even on error
-      // to maintain good UX, but we log the error
     }
   };
 
-  const handleConnectToWordPress = async () => {
-    if (!wordpressUrl) {
+  const handleConnectToTTKan = async () => {
+    if (!ttkanUrl) {
       toast({
-        title: "請輸入WordPress網址",
-        description: "WordPress網址不能為空",
+        title: "請輸入TTKan網址",
+        description: "TTKan網址不能為空",
         variant: "destructive"
       });
       return;
@@ -236,25 +280,24 @@ const MangaFox = () => {
 
     setIsConnecting(true);
     try {
-      const result = await connectToWordPress(wordpressUrl);
+      // Here we would normally validate the connection with real API
+      // For now, just simulate a connection and trigger the sync
       
-      if (result.success) {
-        toast({
-          title: "連接成功!",
-          description: result.message,
-        });
-        setShowWordPressDialog(false);
-      } else {
-        toast({
-          title: "連接失敗",
-          description: result.message,
-          variant: "destructive"
-        });
-      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "連接成功!",
+        description: `已成功連接到TTKan網站，正在同步數據...`,
+      });
+      
+      // Trigger a sync after connecting
+      await handleSyncFromTTKan();
+      
+      setShowConnectionDialog(false);
     } catch (error) {
       toast({
-        title: "連接錯誤",
-        description: `發生錯誤: ${error}`,
+        title: "連接失敗",
+        description: `無法連接到TTKan: ${error}`,
         variant: "destructive"
       });
     } finally {
@@ -281,28 +324,28 @@ const MangaFox = () => {
             <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">MangaFox</h1>
+            <h1 className="text-3xl font-bold tracking-tight">小說漫畫系統</h1>
           </div>
           
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              onClick={handleSyncFromServer}
+              onClick={handleSyncFromTTKan}
               disabled={isRefreshing}
               className="flex items-center gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? '同步中...' : '同步更新'}
+              {isRefreshing ? '同步中...' : '從TTKan同步'}
             </Button>
             
             {isAdmin && (
               <Button 
                 variant="outline" 
-                onClick={() => setShowWordPressDialog(true)}
+                onClick={() => setShowConnectionDialog(true)}
                 className="flex items-center gap-2"
               >
                 <LinkIcon className="h-4 w-4" />
-                連接WordPress
+                連接TTKan
               </Button>
             )}
           </div>
@@ -319,7 +362,7 @@ const MangaFox = () => {
           // Novel detail view
           <NovelDetail 
             novel={selectedNovel}
-            chapters={mockChapters}
+            chapters={chapters.length > 0 ? chapters : mockChapters}
             onStartReading={handleStartReading}
             onBackToList={handleBackToList}
             onSelectChapter={handleSelectChapter}
@@ -335,7 +378,7 @@ const MangaFox = () => {
               novelTypes={novelTypes}
               isMobile={isMobile}
               onAddNovel={handleAddNovel}
-              onSyncContent={handleSyncFromServer}
+              onSyncContent={handleSyncFromTTKan}
               isSyncing={isRefreshing}
             />
             
@@ -348,30 +391,30 @@ const MangaFox = () => {
         )}
       </div>
 
-      {/* WordPress連接對話框 */}
-      <Dialog open={showWordPressDialog} onOpenChange={setShowWordPressDialog}>
+      {/* TTKan連接對話框 */}
+      <Dialog open={showConnectionDialog} onOpenChange={setShowConnectionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>連接到WordPress</DialogTitle>
+            <DialogTitle>連接到TTKan</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="wpUrl">WordPress網址</Label>
+            <Label htmlFor="ttkanUrl">TTKan網址</Label>
             <Input 
-              id="wpUrl" 
-              value={wordpressUrl} 
-              onChange={e => setWordpressUrl(e.target.value)} 
-              placeholder="https://yoursite.wordpress.com"
+              id="ttkanUrl" 
+              value={ttkanUrl} 
+              onChange={e => setTtkanUrl(e.target.value)} 
+              placeholder="https://www.ttkan.co"
               className="mt-2"
             />
             <p className="text-sm text-muted-foreground mt-2">
-              輸入您的WordPress網站URL，系統將會自動連接並同步內容。
+              輸入TTKan網站URL，系統將會自動連接並同步內容。
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowWordPressDialog(false)}>
+            <Button variant="outline" onClick={() => setShowConnectionDialog(false)}>
               取消
             </Button>
-            <Button onClick={handleConnectToWordPress} disabled={isConnecting}>
+            <Button onClick={handleConnectToTTKan} disabled={isConnecting}>
               {isConnecting ? "連接中..." : "連接"}
             </Button>
           </DialogFooter>

@@ -57,21 +57,18 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
         onAddNovel(newNovel);
         toast({
           title: "導入成功!",
-          description: `成功從Google導入「${searchTerm}」並同步到伺服器`,
+          description: `成功導入「${searchTerm}」並同步到系統`,
         });
         onSearchChange(''); // 清除搜尋欄
 
-        // Since we don't have manga_notifications table, we'll use customer_support to simulate notifications
-        // This is a temporary solution until proper tables are created
+        // Send notification about the new import
         try {
           await supabase
             .from('customer_support')
-            .insert([
-              { 
-                message: `新增漫畫: ${newNovel.title}`,
-                user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
-              }
-            ]);
+            .insert([{ 
+              message: `新增漫畫: ${newNovel.title}`,
+              user_id: (await supabase.auth.getUser()).data.user?.id || 'anonymous'
+            }]);
         } catch (error) {
           console.error("無法發送同步通知:", error);
         }
