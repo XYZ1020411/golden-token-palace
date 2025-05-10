@@ -57,7 +57,8 @@ const Dashboard = () => {
     return null;
   }
 
-  const isAdmin = user?.role === "ADMIN";
+  // Fix 1: Update the role comparison to match the UserRole type from AuthContext
+  const isAdmin = user?.role === "admin"; // Changed from "ADMIN" to "admin" to match the UserRole type
 
   const handleFeatureClick = (featureName: string, path: string) => {
     if (path) {
@@ -77,7 +78,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {welcomeMessage} {user?.username || user?.displayName || "用戶"}
+              {welcomeMessage} {user?.username || user?.username || "用戶"} {/* Fix 2: Changed displayName to username since displayName doesn't exist on User */}
             </h1>
             <p className="text-muted-foreground">
               {currentTime.toLocaleDateString("zh-TW", {
