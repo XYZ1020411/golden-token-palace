@@ -22,6 +22,7 @@ import VipRewards from "./pages/VipRewards";
 import WishPool from "./pages/WishPool";
 import BalloonGame from "./pages/BalloonGame";
 import DartGame from "./pages/DartGame";
+import CouponRedemption from "./pages/CouponRedemption";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
@@ -63,6 +64,7 @@ function App() {
                       <Route path="/wish-pool" element={<WishPool />} />
                       <Route path="/balloon-game" element={<BalloonGame />} />
                       <Route path="/dart-game" element={<DartGame />} />
+                      <Route path="/coupon-redemption" element={<CouponRedemption />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </InfoServicesProvider>
