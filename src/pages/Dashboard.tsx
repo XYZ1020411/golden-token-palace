@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
-import { UserRole } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +57,7 @@ const Dashboard = () => {
     return null;
   }
 
-  const isAdmin = user?.role === UserRole.ADMIN;
+  const isAdmin = user?.role === "ADMIN";
 
   const handleFeatureClick = (featureName: string, path: string) => {
     if (path) {
@@ -78,7 +77,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {welcomeMessage} {user?.username || user?.email}
+              {welcomeMessage} {user?.username || user?.displayName || "用戶"}
             </h1>
             <p className="text-muted-foreground">
               {currentTime.toLocaleDateString("zh-TW", {
@@ -102,7 +101,7 @@ const Dashboard = () => {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold mb-2">精彩漫畫與小說</h2>
-                <p>來自 TTKan.co 的優質內容已可瀏覽！全新體驗等您探索。</p>
+                <p>來自 Open Library 的優質內容已可瀏覽！全新體驗等您探索。</p>
                 <Button 
                   variant="secondary" 
                   className="mt-4"
@@ -128,7 +127,7 @@ const Dashboard = () => {
               <CardTitle className="group-hover:text-blue-600 transition-colors">漫畫小說</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">來自TTKan的優質漫畫和小說</p>
+              <p className="text-sm text-muted-foreground">來自Open Library的優質漫畫和小說</p>
             </CardContent>
           </Card>
           
@@ -176,7 +175,7 @@ const Dashboard = () => {
             <CardHeader className="pb-2">
               <PartyPopper className="h-8 w-8 mb-2 text-amber-500 group-hover:text-amber-600 transition-colors" />
               <CardTitle className="group-hover:text-amber-600 transition-colors">會員福利</CardTitle>
-              {user?.isVip && <Badge className="absolute top-2 right-2">VIP</Badge>}
+              {user?.vipLevel > 0 && <Badge className="absolute top-2 right-2">VIP</Badge>}
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">專屬會員優惠與福利</p>

@@ -47,7 +47,7 @@ const MangaReader = ({
           </Button>
           
           <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <Badge variant="outline" className="bg-blue-50">TTKan.co</Badge>
+            <Badge variant="outline" className="bg-blue-50">Open Library</Badge>
             {novel?.title} - {chapter.title}
           </div>
           
@@ -69,12 +69,12 @@ const MangaReader = ({
       
       <div className="flex justify-end mb-2">
         <a
-          href="https://www.ttkan.co/"
+          href="https://openlibrary.org/"
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-blue-500 flex items-center gap-1"
         >
-          內容來源: TTKan.co <Link2 className="h-3 w-3" />
+          內容來源: Open Library <Link2 className="h-3 w-3" />
         </a>
       </div>
       
@@ -109,7 +109,7 @@ const MangaReader = ({
               // Manga viewer with mock images
               <div className="space-y-4">
                 <div className="bg-blue-50 rounded p-3 mb-6 text-sm text-center">
-                  此内容來自TTKan.co，版權歸原作者所有
+                  此内容來自Open Library，版權歸原作者所有
                 </div>
                 {Array(5).fill(null).map((_, index) => (
                   <div key={index} className="w-full">
@@ -139,7 +139,7 @@ const MangaReader = ({
               // Novel text content
               <>
                 <div className="bg-blue-50 rounded p-3 mb-6 text-sm text-center">
-                  此内容來自TTKan.co，版權歸原作者所有
+                  此内容來自Open Library，版權歸原作者所有
                 </div>
                 <div className="whitespace-pre-line">
                   {chapter.content}

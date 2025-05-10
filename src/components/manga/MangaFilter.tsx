@@ -58,12 +58,12 @@ const MangaFilter = ({
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">資料來源:</span>
           <a 
-            href="https://www.ttkan.co/" 
+            href="https://openlibrary.org/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1"
           >
-            TTKan.co <ExternalLink className="h-3 w-3" />
+            Open Library <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>
@@ -129,7 +129,7 @@ const MangaFilter = ({
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isMobile ? '' : (isSyncing ? '同步中' : '從TTKan同步')}
+            {isMobile ? '' : (isSyncing ? '同步中' : '從OpenLibrary同步')}
           </Button>
           
           {isAdmin && onAddNovel && (
