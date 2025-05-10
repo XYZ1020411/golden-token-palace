@@ -68,8 +68,9 @@ const BackendManagement = () => {
     // This would typically come from a real API
     const loadMockData = async () => {
       try {
-        const response = await import("@/data/mockNovelsData");
-        setMockNovels(response.default);
+        // Fix: Use named import instead of accessing default
+        const { mockNovels } = await import("@/data/mockNovelsData");
+        setMockNovels(mockNovels);
       } catch (error) {
         console.error("Failed to load mock novels data", error);
       }
