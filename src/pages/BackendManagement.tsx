@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -31,7 +30,7 @@ import { UserRole } from "@/context/AuthContext";
 import { getAiAssistantResponse } from "@/services/aiAssistant";
 import MangaAdmin from "@/components/manga/MangaAdmin";
 import { GiftCodeManagement } from "@/components/backend/GiftCodeManagement";
-import { useState as useStateMock } from "react"; // Mock for sample data
+import { mockNovels } from "@/data/mockNovelsData"; // Fix: Use named import instead of accessing default
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -60,7 +59,7 @@ const BackendManagement = () => {
   } = useAdmin();
 
   // Mock novels data for manga admin
-  const [mockNovels, setMockNovels] = useState([]);
+  const [mockNovelsList, setMockNovelsList] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
@@ -69,8 +68,7 @@ const BackendManagement = () => {
     const loadMockData = async () => {
       try {
         // Fix: Use named import instead of accessing default
-        const { mockNovels } = await import("@/data/mockNovelsData");
-        setMockNovels(mockNovels);
+        setMockNovelsList(mockNovels);
       } catch (error) {
         console.error("Failed to load mock novels data", error);
       }
@@ -305,15 +303,15 @@ const BackendManagement = () => {
             
             {selectedTab === "manga" && (
               <MangaAdmin 
-                novels={mockNovels}
+                novels={mockNovelsList}
                 onAddNovel={(novel) => {
-                  setMockNovels([...mockNovels, novel]);
+                  setMockNovelsList([...mockNovelsList, novel]);
                 }}
                 onUpdateNovel={(novel) => {
-                  setMockNovels(mockNovels.map(n => n.id === novel.id ? novel : n));
+                  setMockNovelsList(mockNovelsList.map(n => n.id === novel.id ? novel : n));
                 }}
                 onDeleteNovel={(id) => {
-                  setMockNovels(mockNovels.filter(n => n.id !== id));
+                  setMockNovelsList(mockNovelsList.filter(n => n.id !== id));
                 }}
                 onSyncContent={handleSyncContent}
                 isSyncing={isSyncing}

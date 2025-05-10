@@ -10,7 +10,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Search, Plus, RefreshCw, Filter } from "lucide-react";
+import { Search, Plus, RefreshCw, Filter, ExternalLink } from "lucide-react";
 import { Novel } from "@/types/novel";
 import { useState } from "react";
 import { 
@@ -53,97 +53,113 @@ const MangaFilter = ({
   const [showFilters, setShowFilters] = useState(false);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="搜索作品名稱、作者或標籤"
-          className="pl-10"
-        />
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">資料來源:</span>
+          <a 
+            href="https://www.ttkan.co/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-sm text-blue-500 hover:text-blue-700 flex items-center gap-1"
+          >
+            TTKan.co <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       </div>
       
-      <div className="flex gap-2">
-        <Select value={selectedType} onValueChange={onTypeChange}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="全部分類" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>分類</SelectLabel>
-              <SelectItem value="">全部分類</SelectItem>
-              {novelTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="搜索作品名稱、作者或標籤"
+            className="pl-10"
+          />
+        </div>
         
-        {onShowMangaChange && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-4">
-              <div className="space-y-2">
-                <h4 className="font-medium text-sm">進階篩選</h4>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="manga-only" 
-                    checked={showOnlyManga}
-                    onCheckedChange={(checked) => {
-                      onShowMangaChange(checked === true);
-                    }}
-                  />
-                  <Label htmlFor="manga-only">僅顯示漫畫</Label>
+        <div className="flex gap-2">
+          <Select value={selectedType} onValueChange={onTypeChange}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="全部分類" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>分類</SelectLabel>
+                <SelectItem value="">全部分類</SelectItem>
+                {novelTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          
+          {onShowMangaChange && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">進階篩選</h4>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="manga-only" 
+                      checked={showOnlyManga}
+                      onCheckedChange={(checked) => {
+                        onShowMangaChange(checked === true);
+                      }}
+                    />
+                    <Label htmlFor="manga-only">僅顯示漫畫</Label>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-        
-        <Button 
-          variant="outline" 
-          onClick={onSyncContent}
-          disabled={isSyncing}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isMobile ? '' : (isSyncing ? '同步中' : '同步')}
-        </Button>
-        
-        {isAdmin && onAddNovel && (
+              </PopoverContent>
+            </Popover>
+          )}
+          
           <Button 
-            variant="default"
-            onClick={() => onAddNovel({
-              id: `new-${Date.now()}`,
-              title: "新作品",
-              author: "未知作者",
-              coverImage: `https://picsum.photos/400/600?random=${Math.random()}`,
-              tags: ["新作"],
-              rating: 0,
-              chapters: 0,
-              views: 0,
-              likes: 0,
-              summary: "",
-              lastUpdated: new Date().toISOString(),
-              isNew: true,
-              isHot: false,
-              isFeatured: false,
-              type: "小說",
-              isManga: false
-            })}
+            variant="outline" 
+            onClick={onSyncContent}
+            disabled={isSyncing}
             className="flex items-center gap-2"
           >
-            <Plus className="h-4 w-4" />
-            {isMobile ? '' : '新增作品'}
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isMobile ? '' : (isSyncing ? '同步中' : '從TTKan同步')}
           </Button>
-        )}
+          
+          {isAdmin && onAddNovel && (
+            <Button 
+              variant="default"
+              onClick={() => onAddNovel({
+                id: `new-${Date.now()}`,
+                title: "新作品",
+                author: "未知作者",
+                coverImage: `https://picsum.photos/400/600?random=${Math.random()}`,
+                tags: ["新作"],
+                rating: 0,
+                chapters: 0,
+                views: 0,
+                likes: 0,
+                summary: "",
+                lastUpdated: new Date().toISOString(),
+                isNew: true,
+                isHot: false,
+                isFeatured: false,
+                type: "小說",
+                isManga: false
+              })}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {isMobile ? '' : '新增作品'}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -45,40 +45,48 @@ const convertToAppNovel = (ttkanNovel: any): Novel => {
   };
 };
 
-// Mock TTKan API fetch - in real implementation, this would call the actual TTKan API
-const mockFetchFromTTKan = async () => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Return mock data that simulates TTKan response
-  return {
-    novels: Array(12).fill(null).map((_, index) => ({
-      id: `ttkan-${index}`,
-      title: `TTKAN小說 #${index + 1}`,
-      author: `TTKAN作者 ${String.fromCharCode(65 + (index % 26))}`,
-      coverUrl: `https://picsum.photos/400/600?random=${index}`,
-      tags: ["小說", "ttkan", index % 2 === 0 ? "熱門" : "新作"],
-      description: `這是從TTKan網站同步的小說內容。這本小說講述了一個精彩的故事，充滿了冒險、情感與刺激。這是第 ${index + 1} 本小說。`,
-      chapterCount: Math.floor(Math.random() * 100) + 5,
-      updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      viewCount: Math.floor(Math.random() * 50000) + 1000,
-      rating: Math.floor(Math.random() * 20 + 30) / 10, // 3.0 - 5.0
-      isNew: index % 3 === 0,
-      isHot: index % 5 === 0,
-      isFeatured: index % 7 === 0,
-      type: index % 2 === 0 ? "小說" : "漫畫",
-      isManga: index % 2 !== 0
-    }))
-  };
+// Fetch from TTKan API - This would need to be implemented with actual API integration
+const fetchFromTTKan = async () => {
+  try {
+    console.log("正在從 TTKan (https://www.ttkan.co/) 獲取數據...");
+
+    // In a real implementation, this would be an actual API call to TTKan
+    // For now, simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Return mock data that simulates TTKan response
+    return {
+      novels: Array(16).fill(null).map((_, index) => ({
+        id: `ttkan-${index}`,
+        title: `TTKan${index % 2 === 0 ? '小說' : '漫畫'} #${index + 1}`,
+        author: `TTKan作者 ${String.fromCharCode(65 + (index % 26))}`,
+        coverUrl: `https://picsum.photos/400/600?random=${index}`,
+        tags: ["小說", "ttkan", index % 2 === 0 ? "熱門" : "新作"],
+        description: `這是從TTKan網站(https://www.ttkan.co/)同步的${index % 2 === 0 ? '小說' : '漫畫'}內容。${index % 2 === 0 ? '這本小說講述了一個精彩的故事，充滿了冒險、情感與刺激。' : '這部漫畫以精美的畫風和引人入勝的劇情著稱。'}這是第 ${index + 1} 本作品。`,
+        chapterCount: Math.floor(Math.random() * 100) + 5,
+        updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        viewCount: Math.floor(Math.random() * 50000) + 1000,
+        rating: Math.floor(Math.random() * 20 + 30) / 10, // 3.0 - 5.0
+        isNew: index % 3 === 0,
+        isHot: index % 5 === 0,
+        isFeatured: index % 7 === 0,
+        type: index % 2 === 0 ? "小說" : "漫畫",
+        isManga: index % 2 !== 0
+      }))
+    };
+  } catch (error) {
+    console.error("從TTKan獲取數據失敗:", error);
+    throw new Error(`TTKan同步失敗: ${error}`);
+  }
 };
 
 // Service functions
 export const fetchNovelsFromTTKan = async (): Promise<Novel[]> => {
   try {
-    console.log("正在從TTKan獲取小說資料...");
+    console.log("正在從TTKan (https://www.ttkan.co/) 獲取小說資料...");
     
     // In real implementation, call actual TTKan API
-    const response = await mockFetchFromTTKan();
+    const response = await fetchFromTTKan();
     
     // Convert TTKan novels to our app's format
     const novels: Novel[] = response.novels.map(convertToAppNovel);
@@ -88,7 +96,7 @@ export const fetchNovelsFromTTKan = async (): Promise<Novel[]> => {
       await supabase
         .from('customer_support')
         .insert([{
-          message: `成功從TTKan同步了 ${novels.length} 本小說/漫畫`,
+          message: `成功從TTKan (https://www.ttkan.co/) 同步了 ${novels.length} 本小說/漫畫`,
           user_id: (await supabase.auth.getUser()).data.user?.id || 'system'
         }]);
     } catch (error) {
@@ -105,6 +113,8 @@ export const fetchNovelsFromTTKan = async (): Promise<Novel[]> => {
 
 // Fetch novel details and chapters from TTKan
 export const fetchNovelChaptersFromTTKan = async (novelId: string): Promise<NovelChapter[]> => {
+  console.log(`正在從TTKan獲取ID為 ${novelId} 的章節資料...`);
+  
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 600));
   
@@ -113,7 +123,7 @@ export const fetchNovelChaptersFromTTKan = async (novelId: string): Promise<Nove
     id: `${novelId}-chapter-${index + 1}`,
     title: `第${index + 1}章：${index === 0 ? '序章' : index === 9 ? '結局' : `精彩劇情${index}`}`,
     number: index + 1,
-    content: `這是第 ${index + 1} 章的內容，從TTKan同步。\n\n這個章節講述了主角的冒險經歷...\n\n這是一段從TTKan拉取的精彩內容。具體內容比較長，這裡只是示例。\n\n希望您喜歡這個故事！`,
+    content: `這是第 ${index + 1} 章的內容，從TTKan同步。\n\n這個章節講述了主角的冒險經歷...\n\n這是一段從TTKan (https://www.ttkan.co/) 拉取的精彩內容。具體內容比較長，這裡只是示例。\n\n希望您喜歡這個故事！`,
     publishDate: new Date(Date.now() - (10 - index) * 7 * 24 * 60 * 60 * 1000).toISOString(),
     views: Math.floor(Math.random() * 10000) + 500
   }));
@@ -121,6 +131,8 @@ export const fetchNovelChaptersFromTTKan = async (novelId: string): Promise<Nove
 
 // Set up a real-time listener for novel updates
 export const setupTTKanSyncListener = (onUpdate: (novels: Novel[]) => void) => {
+  console.log("設置TTKan同步監聽器...");
+  
   // Set up a periodic fetch from TTKan (every 30 minutes)
   const intervalId = setInterval(async () => {
     try {

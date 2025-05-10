@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Novel, NovelChapter } from "@/types/novel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, ChevronLeft, ChevronRight, Maximize, Minimize } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Maximize, Minimize, Link2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface MangaReaderProps {
   novel?: Novel;
@@ -45,7 +46,8 @@ const MangaReader = ({
             返回資訊頁
           </Button>
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Badge variant="outline" className="bg-blue-50">TTKan.co</Badge>
             {novel?.title} - {chapter.title}
           </div>
           
@@ -64,6 +66,17 @@ const MangaReader = ({
           </div>
         </div>
       )}
+      
+      <div className="flex justify-end mb-2">
+        <a
+          href="https://www.ttkan.co/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-blue-500 flex items-center gap-1"
+        >
+          內容來源: TTKan.co <Link2 className="h-3 w-3" />
+        </a>
+      </div>
       
       {fullscreenImage ? (
         <div 
@@ -95,6 +108,9 @@ const MangaReader = ({
             {novel?.isManga ? (
               // Manga viewer with mock images
               <div className="space-y-4">
+                <div className="bg-blue-50 rounded p-3 mb-6 text-sm text-center">
+                  此内容來自TTKan.co，版權歸原作者所有
+                </div>
                 {Array(5).fill(null).map((_, index) => (
                   <div key={index} className="w-full">
                     <div className="relative group">
@@ -121,9 +137,14 @@ const MangaReader = ({
               </div>
             ) : (
               // Novel text content
-              <div className="whitespace-pre-line">
-                {chapter.content}
-              </div>
+              <>
+                <div className="bg-blue-50 rounded p-3 mb-6 text-sm text-center">
+                  此内容來自TTKan.co，版權歸原作者所有
+                </div>
+                <div className="whitespace-pre-line">
+                  {chapter.content}
+                </div>
+              </>
             )}
           </div>
         </Card>
