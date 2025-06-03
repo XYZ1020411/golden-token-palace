@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import DailyNovel from "./pages/DailyNovel";
 import MangaFox from "./pages/MangaFox";
+import WorldBuilder from "./pages/WorldBuilder";
 import Admin from "./pages/Admin";
 import BackendManagement from "./pages/BackendManagement";
 import VipRewards from "./pages/VipRewards";
