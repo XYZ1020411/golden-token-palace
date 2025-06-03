@@ -11,6 +11,7 @@ import { AdminProvider } from "@/context/AdminContext";
 import { ProductProvider } from "@/context/ProductContext";
 import { InfoServicesProvider } from "@/context/InfoServicesContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { AiCustomerService } from "@/components/customer-service/AiCustomerService";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -38,9 +39,15 @@ const queryClient = new QueryClient();
 
 // 客服系統載入函數
 const loadCustomerService = () => {
+  // 檢查是否已經載入過
+  if (document.querySelector('script[src*="salesmartly.com"]')) {
+    return;
+  }
+  
   const script = document.createElement('script');
   script.src = 'https://plugin-code.salesmartly.com/js/project_316560_325192_1745729147.js';
   script.async = true;
+  script.defer = true;
   document.head.appendChild(script);
 };
 
@@ -52,16 +59,16 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ThemeProvider>
-          <TooltipProvider>
-            <AuthProvider>
-              <SyncProvider>
-                <WalletProvider>
-                  <VipProvider>
-                    <AdminProvider>
-                      <ProductProvider>
-                        <InfoServicesProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <SyncProvider>
+              <WalletProvider>
+                <VipProvider>
+                  <AdminProvider>
+                    <ProductProvider>
+                      <InfoServicesProvider>
+                        <BrowserRouter>
                           <Routes>
                             <Route path="/" element={<Index />} />
                             <Route path="/login" element={<Login />} />
@@ -85,17 +92,18 @@ function App() {
                             <Route path="/dart-game" element={<DartGame />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
+                          <AiCustomerService />
                           <Toaster />
-                        </InfoServicesProvider>
-                      </ProductProvider>
-                    </AdminProvider>
-                  </VipProvider>
-                </WalletProvider>
-              </SyncProvider>
-            </AuthProvider>
-          </TooltipProvider>
-        </ThemeProvider>
-      </BrowserRouter>
+                        </BrowserRouter>
+                      </InfoServicesProvider>
+                    </ProductProvider>
+                  </AdminProvider>
+                </VipProvider>
+              </WalletProvider>
+            </SyncProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
