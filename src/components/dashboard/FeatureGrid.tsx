@@ -12,7 +12,7 @@ import {
   CalendarDays,
   CloudSun,
   PartyPopper,
-  BookText,
+  Globe,
   Gamepad2,
   CreditCard,
 } from "lucide-react";
@@ -36,12 +36,20 @@ export const FeatureGrid = () => {
   
   const features = [
     {
-      title: "漫畫小說",
-      description: "來自Open Library的優質漫畫和小說",
+      title: "每日小說",
+      description: "來自Open Library的優質小說內容",
       icon: <BookOpen className="h-8 w-8" />,
-      path: "/manga-fox",
+      path: "/daily-novel",
       iconColor: "text-blue-500",
       iconHoverColor: "text-blue-600"
+    },
+    {
+      title: "建立你自己的世界",
+      description: "創造法律、建築、動植物、文化、科技等內容",
+      icon: <Globe className="h-8 w-8" />,
+      path: "/manga",
+      iconColor: "text-purple-500",
+      iconHoverColor: "text-purple-600"
     },
     {
       title: "禮包兌換",
@@ -88,7 +96,7 @@ export const FeatureGrid = () => {
     {
       title: "許願池",
       description: "許下願望等待達成",
-      icon: <BookText className="h-8 w-8" />,
+      icon: <Globe className="h-8 w-8" />,
       path: "/wish-pool",
       iconColor: "text-indigo-500",
       iconHoverColor: "text-indigo-600"
