@@ -11,7 +11,7 @@ import { BackendSyncManagement } from "@/components/backend/BackendSyncManagemen
 import { BackendSystemSettings } from "@/components/backend/BackendSystemSettings";
 import { BackendAiSettings } from "@/components/backend/BackendAiSettings";
 import { WishPoolManagement } from "@/components/backend/WishPoolManagement";
-import { GiftCodeManagement } from "@/components/backend/GiftCodeManagement";
+import GiftCodeManagement from "@/components/backend/GiftCodeManagement";
 import { RedemptionCodeManagement } from "@/components/backend/RedemptionCodeManagement";
 import { GameManagement } from "@/components/backend/GameManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
