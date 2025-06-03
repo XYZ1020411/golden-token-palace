@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -44,15 +43,21 @@ export const BackendSyncManagement = () => {
 
       if (error) throw error;
 
-      const formattedUsers = data?.map(user => ({
-        id: user.id,
-        username: user.username || '未知用戶',
-        points: user.points || 0,
-        role: user.role || 'user',
-        is_online: user.user_sync_status?.[0]?.is_online || false,
-        last_sync_at: user.user_sync_status?.[0]?.last_sync_at || '',
-        sync_version: user.user_sync_status?.[0]?.sync_version || 0
-      })) || [];
+      const formattedUsers = data?.map(user => {
+        const syncStatus = Array.isArray(user.user_sync_status) 
+          ? user.user_sync_status[0] 
+          : user.user_sync_status;
+        
+        return {
+          id: user.id,
+          username: user.username || '未知用戶',
+          points: user.points || 0,
+          role: user.role || 'user',
+          is_online: syncStatus?.is_online || false,
+          last_sync_at: syncStatus?.last_sync_at || '',
+          sync_version: syncStatus?.sync_version || 0
+        };
+      }) || [];
 
       setSyncUsers(formattedUsers);
     } catch (error) {

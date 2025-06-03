@@ -1,6 +1,7 @@
 
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { BackendStatsSection } from "@/components/backend/BackendStatsSection";
@@ -18,6 +19,22 @@ import { UserRole } from "@/context/AuthContext";
 
 const BackendManagement = () => {
   const { user, isAuthenticated } = useAuth();
+  const { 
+    users, 
+    announcements, 
+    supportMessages,
+    currentTemperature,
+    addUser, 
+    deleteUser, 
+    updateUser,
+    addAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+    backupData,
+    restoreData,
+    respondToSupportMessage,
+    markSupportMessageResolved
+  } = useAdmin();
   const navigate = useNavigate();
 
   if (!isAuthenticated) {
@@ -30,23 +47,7 @@ const BackendManagement = () => {
     return null;
   }
 
-  // Mock functions for user management
-  const addUser = async (username: string, password: string, role: UserRole) => {
-    console.log("Adding user:", { username, password, role });
-    return true;
-  };
-
-  const deleteUser = async (userId: string) => {
-    console.log("Deleting user:", userId);
-    return true;
-  };
-
-  const updateUser = async (userId: string, updates: any) => {
-    console.log("Updating user:", userId, updates);
-    return true;
-  };
-
-  // Mock users data
+  // Mock users data for BackendUserManagement
   const mockUsers = [
     {
       id: "1",
@@ -90,7 +91,12 @@ const BackendManagement = () => {
           </TabsList>
 
           <TabsContent value="stats">
-            <BackendStatsSection />
+            <BackendStatsSection 
+              users={users}
+              announcements={announcements}
+              supportMessages={supportMessages}
+              currentTemperature={currentTemperature}
+            />
           </TabsContent>
 
           <TabsContent value="users">
@@ -107,7 +113,12 @@ const BackendManagement = () => {
           </TabsContent>
 
           <TabsContent value="announcements">
-            <BackendAnnouncementSection />
+            <BackendAnnouncementSection 
+              announcements={announcements}
+              addAnnouncement={addAnnouncement}
+              deleteAnnouncement={deleteAnnouncement}
+              updateAnnouncement={updateAnnouncement}
+            />
           </TabsContent>
 
           <TabsContent value="wishpool">
@@ -128,8 +139,19 @@ const BackendManagement = () => {
         </Tabs>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BackendSystemSettings />
-          <BackendAiSettings />
+          <BackendSystemSettings 
+            backupData={backupData}
+            restoreData={restoreData}
+          />
+          <BackendAiSettings 
+            supportMessages={supportMessages}
+            respondToSupportMessage={respondToSupportMessage}
+            markSupportMessageResolved={markSupportMessageResolved}
+            getAiAssistantResponse={async (message: string) => {
+              // This is a placeholder - the actual implementation would call the AI service
+              return { status: 'success' as const, content: 'AI回覆內容' };
+            }}
+          />
         </div>
       </div>
     </MainLayout>
