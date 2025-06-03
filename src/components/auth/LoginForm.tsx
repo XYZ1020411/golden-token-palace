@@ -9,11 +9,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { Facebook, Globe, MessageSquare } from "lucide-react";
 
 interface LoginFormProps {
-  onCaptchaVerify: (verified: boolean) => void;
   captchaVerified: boolean;
+  captchaCode: string;
 }
 
-const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
+const LoginForm = ({ captchaVerified, captchaCode }: LoginFormProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,6 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // 用戶登入成功後根據角色導向
   const redirectAfterLogin = (role?: string) => {
     if (role === "admin") {
       navigate("/admin");
@@ -35,7 +34,6 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Verify if captcha has been completed
     if (!captchaVerified) {
       toast({
         title: "驗證失敗",
@@ -56,7 +54,6 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
           description: "歡迎回來！",
         });
 
-        // 這裡取得新用戶資訊，然後重導
         const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
         redirectAfterLogin(userInfo.role);
       } else {
@@ -78,6 +75,15 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
   };
 
   const handleSocialLogin = async (provider: string) => {
+    if (!captchaVerified) {
+      toast({
+        title: "驗證失敗",
+        description: "請先完成驗證碼驗證",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const success = await socialLogin(provider);
@@ -87,7 +93,6 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
           description: "歡迎回來！",
         });
 
-        // 這裡取得新用戶資訊，然後重導
         const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
         redirectAfterLogin(userInfo.role);
       } else {
@@ -106,14 +111,6 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCaptchaVerify = (code: string) => {
-    onCaptchaVerify(true);
-    toast({
-      title: "驗證成功",
-      description: "驗證碼驗證成功",
-    });
   };
 
   return (
@@ -154,7 +151,7 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
         <Button
           type="submit"
           className="w-full"
-          disabled={loading}
+          disabled={loading || !captchaVerified}
         >
           {loading ? "登入中..." : "登入"}
         </Button>
@@ -175,7 +172,7 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
             type="button"
             variant="outline"
             onClick={() => handleSocialLogin("facebook")}
-            disabled={loading}
+            disabled={loading || !captchaVerified}
           >
             <Facebook className="h-5 w-5 text-blue-600" />
           </Button>
@@ -183,7 +180,7 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
             type="button"
             variant="outline"
             onClick={() => handleSocialLogin("google")}
-            disabled={loading}
+            disabled={loading || !captchaVerified}
           >
             <Globe className="h-5 w-5 text-red-500" />
           </Button>
@@ -191,7 +188,7 @@ const LoginForm = ({ onCaptchaVerify, captchaVerified }: LoginFormProps) => {
             type="button"
             variant="outline"
             onClick={() => handleSocialLogin("discord")}
-            disabled={loading}
+            disabled={loading || !captchaVerified}
           >
             <MessageSquare className="h-5 w-5 text-indigo-500" />
           </Button>

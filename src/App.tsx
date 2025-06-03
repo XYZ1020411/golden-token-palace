@@ -77,7 +77,7 @@ function App() {
                             <Route path="/profile" element={<Profile />} />
                             <Route path="/wallet" element={<Wallet />} />
                             <Route path="/daily-novel" element={<DailyNovel />} />
-                            <Route path="/manga" element={<MangaFox />} />
+                            <Route path="/manga" element={<WorldBuilder />} />
                             <Route path="/admin" element={<Admin />} />
                             <Route path="/backend" element={<BackendManagement />} />
                             <Route path="/vip-rewards" element={<VipRewards />} />

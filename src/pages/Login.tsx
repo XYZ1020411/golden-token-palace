@@ -6,10 +6,11 @@ import LoginForm from "@/components/auth/LoginForm";
 
 const Login = () => {
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaCode, setCaptchaCode] = useState("");
 
   const handleCaptchaVerify = (code: string) => {
-    // Make CAPTCHA verification case-insensitive
     setCaptchaVerified(true);
+    setCaptchaCode(code);
   };
 
   return (
@@ -23,15 +24,15 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <LoginForm 
-              onCaptchaVerify={setCaptchaVerified}
-              captchaVerified={captchaVerified}
-            />
-            
             <div className="space-y-2">
               <label className="text-sm font-medium">驗證碼 (不分大小寫)</label>
               <Captcha onVerify={handleCaptchaVerify} />
             </div>
+            
+            <LoginForm 
+              captchaVerified={captchaVerified}
+              captchaCode={captchaCode}
+            />
           </CardContent>
         </Card>
       </div>
