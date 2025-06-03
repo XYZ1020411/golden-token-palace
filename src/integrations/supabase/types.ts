@@ -45,33 +45,72 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          check_in_streak: number | null
           created_at: string | null
           display_name: string | null
           id: string
+          join_date: string | null
+          last_check_in: string | null
+          last_vip_bonus: string | null
           points: number | null
+          role: string | null
           updated_at: string | null
           username: string | null
           vip_level: number | null
         }
         Insert: {
           avatar_url?: string | null
+          check_in_streak?: number | null
           created_at?: string | null
           display_name?: string | null
           id: string
+          join_date?: string | null
+          last_check_in?: string | null
+          last_vip_bonus?: string | null
           points?: number | null
+          role?: string | null
           updated_at?: string | null
           username?: string | null
           vip_level?: number | null
         }
         Update: {
           avatar_url?: string | null
+          check_in_streak?: number | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          join_date?: string | null
+          last_check_in?: string | null
+          last_vip_bonus?: string | null
           points?: number | null
+          role?: string | null
           updated_at?: string | null
           username?: string | null
           vip_level?: number | null
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json | null
         }
         Relationships: []
       }

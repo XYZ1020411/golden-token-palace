@@ -101,7 +101,7 @@ const NovelFilter: React.FC<NovelFilterProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部類型</SelectItem>
-              {novelTypes.map(type => (
+              {novelTypes.filter(type => type && type.trim() !== '').map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
             </SelectContent>

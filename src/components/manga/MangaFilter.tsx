@@ -88,7 +88,7 @@ const MangaFilter = ({
               <SelectGroup>
                 <SelectLabel>分類</SelectLabel>
                 <SelectItem value="all">全部分類</SelectItem>
-                {novelTypes.map((type) => (
+                {novelTypes.filter(type => type && type.trim() !== '').map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
                   </SelectItem>
