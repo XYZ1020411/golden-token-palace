@@ -1,228 +1,196 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useSync } from "@/context/SyncContext";
 import MainLayout from "@/components/layout/MainLayout";
+import SyncStatusIndicator from "@/components/sync/SyncStatusIndicator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { User, Lock, MessageCircle, Gift } from "lucide-react";
+import { User, Edit, Save, X, Crown, Star } from "lucide-react";
 
 const Profile = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
+  const { syncStatus } = useSync();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [redeemCode, setRedeemCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState({
+    username: user?.username || "",
+    email: "user@example.com" // Mock email
+  });
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, navigate]);
+  if (!isAuthenticated) {
+    navigate("/login");
+    return null;
+  }
 
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "密碼不匹配",
-        description: "新密碼與確認密碼不匹配，請重新輸入",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "密碼已更新",
-        description: "您的密碼已成功更改",
-      });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setLoading(false);
-    }, 1000);
+  const handleSave = () => {
+    // In a real app, this would update the user profile
+    toast({
+      title: "個人資料已更新",
+      description: "您的個人資料已成功更新",
+    });
+    setIsEditing(false);
   };
 
-  const handleRedeemCode = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!redeemCode) {
-      toast({
-        title: "兌換碼為空",
-        description: "請輸入有效的兌換碼",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "兌換碼無效",
-        description: "您輸入的兌換碼無效或已過期",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }, 1000);
+  const handleCancel = () => {
+    setEditedUser({
+      username: user?.username || "",
+      email: "user@example.com"
+    });
+    setIsEditing(false);
   };
 
-  if (!user) return null;
+  const getRoleBadge = () => {
+    switch (user?.role) {
+      case "admin":
+        return <Badge variant="destructive" className="gap-1"><Crown className="h-3 w-3" />管理員</Badge>;
+      case "vip":
+        return <Badge variant="default" className="gap-1"><Star className="h-3 w-3" />VIP會員</Badge>;
+      default:
+        return <Badge variant="secondary">普通會員</Badge>;
+    }
+  };
 
   return (
     <MainLayout>
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">個人資料</h1>
-          <p className="text-muted-foreground">管理您的帳戶資料與設置</p>
+      <div className="container mx-auto p-6 max-w-4xl space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">個人資料</h1>
+          <Button onClick={logout} variant="outline">
+            登出
+          </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* User Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="mr-2 h-5 w-5" />
-                帳戶資訊
-              </CardTitle>
-              <CardDescription>您的個人資料</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>用戶名</Label>
-                  <Input value={user.username} disabled />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 主要個人資料卡片 */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    基本資料
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                    {isEditing ? "取消" : "編輯"}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label>帳戶類型</Label>
-                  <Input 
-                    value={
-                      user.role === "admin" 
-                        ? "管理員" 
-                        : user.role === "vip" 
-                          ? "VIP會員" 
-                          : "普通會員"
-                    } 
-                    disabled 
-                  />
-                </div>
-                {user.role === "vip" && (
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} />
+                    <AvatarFallback>{user?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                   <div className="space-y-2">
-                    <Label>VIP等級</Label>
-                    <Input value={`Level ${user.vipLevel}`} disabled />
+                    <h2 className="text-2xl font-bold">{user?.username}</h2>
+                    {getRoleBadge()}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">用戶名</Label>
+                    {isEditing ? (
+                      <Input
+                        id="username"
+                        value={editedUser.username}
+                        onChange={(e) => setEditedUser({ ...editedUser, username: e.target.value })}
+                      />
+                    ) : (
+                      <div className="p-2 bg-muted rounded-md">{user?.username}</div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">電子郵件</Label>
+                    {isEditing ? (
+                      <Input
+                        id="email"
+                        type="email"
+                        value={editedUser.email}
+                        onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
+                      />
+                    ) : (
+                      <div className="p-2 bg-muted rounded-md">{editedUser.email}</div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>點數餘額</Label>
+                    <div className="p-2 bg-muted rounded-md font-bold text-primary">
+                      {user?.points?.toLocaleString() || 0}
+                    </div>
+                  </div>
+
+                  {user?.role === "vip" && (
+                    <div className="space-y-2">
+                      <Label>VIP 等級</Label>
+                      <div className="p-2 bg-muted rounded-md font-bold text-yellow-600">
+                        Level {user?.vipLevel || 1}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {isEditing && (
+                  <div className="flex gap-2 pt-4">
+                    <Button onClick={handleSave} className="flex items-center gap-2">
+                      <Save className="h-4 w-4" />
+                      保存
+                    </Button>
+                    <Button onClick={handleCancel} variant="outline">
+                      取消
+                    </Button>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Password Change */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Lock className="mr-2 h-5 w-5" />
-                修改密碼
-              </CardTitle>
-              <CardDescription>更新您的帳戶密碼</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">當前密碼</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
+          {/* 同步狀態側邊欄 */}
+          <div className="space-y-6">
+            <SyncStatusIndicator />
+            
+            {/* 帳戶統計 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">帳戶統計</CardTitle>
+                <CardDescription>您的帳戶活動概覽</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">同步版本</span>
+                  <span className="font-medium">v{syncStatus.syncVersion}</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">新密碼</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">帳戶狀態</span>
+                  <Badge variant={syncStatus.isOnline ? "default" : "secondary"}>
+                    {syncStatus.isOnline ? "活躍" : "離線"}
+                  </Badge>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">確認新密碼</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">註冊時間</span>
+                  <span className="font-medium">2024-01-01</span>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "處理中..." : "更新密碼"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Redeem Code */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Gift className="mr-2 h-5 w-5" />
-                兌換碼
-              </CardTitle>
-              <CardDescription>輸入兌換碼獲取獎勵</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleRedeemCode} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="redeemCode">輸入兌換碼</Label>
-                  <Input
-                    id="redeemCode"
-                    placeholder="輸入兌換碼，例如: XXXX-XXXX-XXXX"
-                    value={redeemCode}
-                    onChange={(e) => setRedeemCode(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "處理中..." : "兌換"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* AI Support */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <MessageCircle className="mr-2 h-5 w-5" />
-                AI客服系統
-              </CardTitle>
-              <CardDescription>獲得即時客服支援</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center space-y-4 py-6">
-              <MessageCircle className="h-16 w-16 text-muted-foreground" />
-              <p className="text-center text-muted-foreground">
-                需要協助？我們的AI客服隨時為您提供幫助
-              </p>
-              <Button>
-                <MessageCircle className="mr-2 h-4 w-4" />
-                開始對話
-              </Button>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </MainLayout>
