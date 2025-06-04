@@ -52,6 +52,14 @@ const MangaFilter = ({
 }: MangaFilterProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
+  // Filter out empty or invalid novel types
+  const validNovelTypes = novelTypes.filter(type => 
+    type && 
+    typeof type === 'string' && 
+    type.trim() !== '' && 
+    type.trim().length > 0
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -88,7 +96,7 @@ const MangaFilter = ({
               <SelectGroup>
                 <SelectLabel>分類</SelectLabel>
                 <SelectItem value="all">全部分類</SelectItem>
-                {novelTypes.filter(type => type && type.trim() !== '').map((type) => (
+                {validNovelTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
                   </SelectItem>
