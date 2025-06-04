@@ -1,30 +1,36 @@
 
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { LucideIcon } from "lucide-react";
 
 interface SidebarItemProps {
-  to: string;
-  icon: ReactNode;
+  icon: LucideIcon;
   label: string;
+  path: string;
   collapsed: boolean;
   hovered: boolean;
+  isActive: boolean;
+  onClick: () => void;
 }
 
-export const SidebarItem = ({ to, icon, label, collapsed, hovered }: SidebarItemProps) => {
-  const location = useLocation();
-  const isActive = location.pathname === to;
-  
+export const SidebarItem = ({ 
+  icon: Icon, 
+  label, 
+  path, 
+  collapsed, 
+  hovered, 
+  isActive, 
+  onClick 
+}: SidebarItemProps) => {
   return (
     <Button 
       variant={isActive ? "secondary" : "ghost"} 
-      className={`justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
-      asChild
+      className={`w-full justify-start ${collapsed && !hovered ? 'px-2' : ''}`}
+      onClick={onClick}
     >
-      <Link to={to}>
-        {icon}
-        {(!collapsed || hovered) && <span className="ml-2">{label}</span>}
-      </Link>
+      <Icon className="h-4 w-4" />
+      {(!collapsed || hovered) && <span className="ml-2">{label}</span>}
     </Button>
   );
 };
