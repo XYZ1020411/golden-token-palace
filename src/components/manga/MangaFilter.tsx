@@ -60,6 +60,9 @@ const MangaFilter = ({
     type.trim().length > 0
   );
 
+  // Ensure selectedType is never an empty string - convert to "all" if empty
+  const normalizedSelectedType = selectedType && selectedType.trim() !== '' ? selectedType : "all";
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -88,7 +91,7 @@ const MangaFilter = ({
         </div>
         
         <div className="flex gap-2">
-          <Select value={selectedType} onValueChange={onTypeChange}>
+          <Select value={normalizedSelectedType} onValueChange={onTypeChange}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="全部分類" />
             </SelectTrigger>
