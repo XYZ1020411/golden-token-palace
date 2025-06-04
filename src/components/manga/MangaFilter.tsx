@@ -52,13 +52,18 @@ const MangaFilter = ({
 }: MangaFilterProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filter out empty or invalid novel types
-  const validNovelTypes = novelTypes.filter(type => 
-    type && 
-    typeof type === 'string' && 
-    type.trim() !== '' && 
-    type.trim().length > 0
-  );
+  // More comprehensive filtering to ensure no empty or invalid values
+  const validNovelTypes = novelTypes
+    .filter(type => 
+      type && 
+      typeof type === 'string' && 
+      type.trim() !== '' && 
+      type.trim().length > 0 &&
+      type !== null &&
+      type !== undefined
+    )
+    .map(type => type.trim()) // Trim any whitespace
+    .filter((type, index, arr) => arr.indexOf(type) === index); // Remove duplicates
 
   // Ensure selectedType is never an empty string - convert to "all" if empty
   const normalizedSelectedType = selectedType && selectedType.trim() !== '' ? selectedType : "all";
@@ -99,11 +104,18 @@ const MangaFilter = ({
               <SelectGroup>
                 <SelectLabel>分類</SelectLabel>
                 <SelectItem value="all">全部分類</SelectItem>
-                {validNovelTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
+                {validNovelTypes.map((type) => {
+                  // Extra safety check - ensure type is valid before rendering
+                  if (!type || type.trim() === '') {
+                    console.warn('Skipping invalid novel type:', type);
+                    return null;
+                  }
+                  return (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             </SelectContent>
           </Select>
